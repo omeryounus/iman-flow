@@ -456,8 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   _dailyVerse!.textArabic,
-                  style: TextStyle(
-                    fontFamily: 'Amiri',
+                  style: ArabicTextStyles.quranVerse(
                     fontSize: 20,
                     height: 2,
                     color: Theme.of(context).brightness == Brightness.dark

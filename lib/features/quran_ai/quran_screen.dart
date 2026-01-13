@@ -110,9 +110,8 @@ class _QuranScreenState extends State<QuranScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                        style: TextStyle(
+                        style: ArabicTextStyles.quranVerse(
                           color: Colors.white.withOpacity(0.9),
-                          fontFamily: 'Amiri',
                           fontSize: 16,
                         ),
                       ),
@@ -328,10 +327,7 @@ class _QuranScreenState extends State<QuranScreen> {
             const Spacer(),
             Text(
               surah.nameArabic,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 18,
-              ),
+              style: ArabicTextStyles.quranVerse(fontSize: 18),
             ),
           ],
         ),
@@ -389,8 +385,7 @@ class _QuranScreenState extends State<QuranScreen> {
           children: [
             Text(
               verse.textArabic,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
+              style: ArabicTextStyles.quranVerse(
                 fontSize: 24,
                 height: 2,
               ),

@@ -140,9 +140,8 @@ class _DuaSectionState extends State<DuaSection> {
                   ),
                   Text(
                     'آية الكرسي',
-                    style: TextStyle(
+                    style: ArabicTextStyles.quranVerse(
                       color: Colors.white.withOpacity(0.9),
-                      fontFamily: 'Amiri',
                       fontSize: 16,
                     ),
                   ),
@@ -278,10 +277,7 @@ class _DuaSectionState extends State<DuaSection> {
           children: [
             Text(
               dua.nameArabic,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 14,
-              ),
+              style: ArabicTextStyles.quranVerse(fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(

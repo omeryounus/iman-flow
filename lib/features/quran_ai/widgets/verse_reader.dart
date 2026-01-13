@@ -77,10 +77,7 @@ class _VerseReaderState extends State<VerseReader> {
             Text(widget.surah.nameSimple),
             Text(
               widget.surah.nameArabic,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 14,
-              ),
+              style: ArabicTextStyles.quranVerse(fontSize: 14),
             ),
           ],
         ),
@@ -147,8 +144,7 @@ class _VerseReaderState extends State<VerseReader> {
                               ),
                               child: Text(
                                 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                                style: TextStyle(
-                                  fontFamily: 'Amiri',
+                                style: ArabicTextStyles.quranVerse(
                                   fontSize: 24,
                                   color: isDark
                                       ? ImanFlowTheme.accentGold
@@ -262,8 +258,7 @@ class _VerseReaderState extends State<VerseReader> {
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
                                     verse.textArabic,
-                                    style: TextStyle(
-                                      fontFamily: 'Amiri',
+                                    style: ArabicTextStyles.quranVerse(
                                       fontSize: 26,
                                       height: 2.2,
                                       color: isDark

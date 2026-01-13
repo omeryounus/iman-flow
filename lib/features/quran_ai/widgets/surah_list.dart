@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/quran_service.dart';
+import '../../../app/theme.dart';
 
 /// Surah List Widget - Displays all 114 Surahs
 class SurahList extends StatelessWidget {
@@ -27,7 +28,7 @@ class SurahList extends StatelessWidget {
           subtitle: Text(surah.nameTranslated),
           trailing: Text(
             surah.nameArabic,
-            style: const TextStyle(fontFamily: 'Amiri', fontSize: 18),
+            style: ArabicTextStyles.quranVerse(fontSize: 18),
           ),
           onTap: () => onSurahTap(surah),
         );

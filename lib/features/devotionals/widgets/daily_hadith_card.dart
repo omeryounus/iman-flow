@@ -137,8 +137,7 @@ class _DailyHadithCardState extends State<DailyHadithCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     hadith.arabic,
-                    style: TextStyle(
-                      fontFamily: 'Amiri',
+                    style: ArabicTextStyles.quranVerse(
                       fontSize: 22,
                       color: Colors.white.withOpacity(0.95),
                       height: 1.8,

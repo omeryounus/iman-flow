@@ -178,10 +178,7 @@ class _DhikrCounterState extends State<DhikrCounter>
                   const Spacer(),
                   Text(
                     currentDhikr.arabic,
-                    style: const TextStyle(
-                      fontFamily: 'Amiri',
-                      fontSize: 20,
-                    ),
+                    style: ArabicTextStyles.quranVerse(fontSize: 20),
                   ),
                   const SizedBox(width: 8),
                   const Icon(Icons.keyboard_arrow_down),
@@ -349,7 +346,7 @@ class _DhikrCounterState extends State<DhikrCounter>
               subtitle: Text(dhikr.meaning),
               trailing: Text(
                 dhikr.arabic,
-                style: const TextStyle(fontFamily: 'Amiri', fontSize: 18),
+                style: ArabicTextStyles.quranVerse(fontSize: 18),
               ),
               selected: _selectedDhikr == dhikr.name,
               selectedTileColor: ImanFlowTheme.primaryGreen.withOpacity(0.1),

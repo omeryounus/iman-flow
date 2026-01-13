@@ -62,9 +62,9 @@ class ImanFlowTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
       ),
@@ -91,9 +91,9 @@ class ImanFlowTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: GoogleFonts.cairo(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -155,9 +155,9 @@ class ImanFlowTheme {
         foregroundColor: textPrimaryDark,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: textPrimaryDark,
         ),
       ),
@@ -184,9 +184,9 @@ class ImanFlowTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.poppins(
+          textStyle: GoogleFonts.cairo(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -229,77 +229,77 @@ class ImanFlowTheme {
         : textPrimaryDark;
     
     return TextTheme(
-      displayLarge: GoogleFonts.poppins(
+      displayLarge: GoogleFonts.cairo(
         fontSize: 32,
         fontWeight: FontWeight.bold,
         color: textColor,
       ),
-      displayMedium: GoogleFonts.poppins(
+      displayMedium: GoogleFonts.cairo(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: textColor,
       ),
-      displaySmall: GoogleFonts.poppins(
+      displaySmall: GoogleFonts.cairo(
         fontSize: 24,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineLarge: GoogleFonts.poppins(
+      headlineLarge: GoogleFonts.cairo(
         fontSize: 22,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineMedium: GoogleFonts.poppins(
+      headlineMedium: GoogleFonts.cairo(
         fontSize: 20,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineSmall: GoogleFonts.poppins(
+      headlineSmall: GoogleFonts.cairo(
         fontSize: 18,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      titleLarge: GoogleFonts.poppins(
+      titleLarge: GoogleFonts.cairo(
         fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      titleMedium: GoogleFonts.poppins(
+      titleMedium: GoogleFonts.cairo(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      titleSmall: GoogleFonts.poppins(
+      titleSmall: GoogleFonts.cairo(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      bodyLarge: GoogleFonts.poppins(
+      bodyLarge: GoogleFonts.cairo(
         fontSize: 16,
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
-      bodyMedium: GoogleFonts.poppins(
+      bodyMedium: GoogleFonts.cairo(
         fontSize: 14,
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
-      bodySmall: GoogleFonts.poppins(
+      bodySmall: GoogleFonts.cairo(
         fontSize: 12,
         fontWeight: FontWeight.normal,
         color: textColor.withOpacity(0.7),
       ),
-      labelLarge: GoogleFonts.poppins(
+      labelLarge: GoogleFonts.cairo(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      labelMedium: GoogleFonts.poppins(
+      labelMedium: GoogleFonts.cairo(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      labelSmall: GoogleFonts.poppins(
+      labelSmall: GoogleFonts.cairo(
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: textColor.withOpacity(0.7),
@@ -309,22 +309,29 @@ class ImanFlowTheme {
 }
 
 /// Arabic text style for Quran verses
+/// Arabic text style for Quran verses
 class ArabicTextStyles {
-  static TextStyle quranVerse({double fontSize = 28}) {
-    return TextStyle(
-      fontFamily: 'Amiri',
+  static TextStyle quranVerse({
+    double fontSize = 28,
+    Color? color,
+    double height = 2.2,
+  }) {
+    return GoogleFonts.amiriQuran(
       fontSize: fontSize,
-      height: 2.0,
-      color: ImanFlowTheme.textPrimaryLight,
+      height: height,
+      color: color ?? ImanFlowTheme.textPrimaryLight,
     );
   }
   
-  static TextStyle quranVerseDark({double fontSize = 28}) {
-    return TextStyle(
-      fontFamily: 'Amiri',
+  static TextStyle quranVerseDark({
+    double fontSize = 28,
+    Color? color,
+    double height = 2.2,
+  }) {
+    return GoogleFonts.amiriQuran(
       fontSize: fontSize,
-      height: 2.0,
-      color: ImanFlowTheme.textPrimaryDark,
+      height: height,
+      color: color ?? ImanFlowTheme.textPrimaryDark,
     );
   }
 }

@@ -198,8 +198,7 @@ class _VerseShareState extends State<VerseShare> {
             padding: const EdgeInsets.all(16),
             child: Text(
               verse.arabicText,
-              style: TextStyle(
-                fontFamily: 'Amiri',
+              style: ArabicTextStyles.quranVerse(
                 fontSize: 22,
                 height: 2,
                 color: isDark ? Colors.white : ImanFlowTheme.textPrimaryLight,
