@@ -1,0 +1,26 @@
+# Flutter Native Splash Configuration
+flutter_native_splash:
+  # Colors
+  color: "#1B5E20"
+  color_dark: "#0D3311"
+  
+  # App icon/image (optional - can use centered image)
+  # image: assets/images/splash_icon.png
+  
+  # Branding
+  branding: Iman Flow
+  branding_mode: bottom
+  
+  # iOS specific
+  ios: true
+  ios_content_mode: center
+  
+  # Android specific  
+  android: true
+  android_12:
+    color: "#1B5E20"
+    color_dark: "#0D3311"
+    
+  # Web specific
+  web: true
+  web_image_mode: center
