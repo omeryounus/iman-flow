@@ -60,9 +60,18 @@ android {
 
     packaging {
         jniLibs {
-            keepDebugSymbols += "**/*.so"
+            excludes += "/META-INF/**"
+            excludes += "**/kotlin/**"
+        }
+        resources {
+            excludes += "/META-INF/**"
         }
     }
+}
+
+// Explicitly prevent stripping of native libs to avoid NDK errors
+tasks.withType<com.android.build.gradle.internal.tasks.StripDebugSymbols>().configureEach {
+    enabled = false
 }
 
 flutter {
