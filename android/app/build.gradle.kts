@@ -20,7 +20,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -60,18 +60,10 @@ android {
 
     packaging {
         jniLibs {
-            excludes += "/META-INF/**"
-            excludes += "**/kotlin/**"
-        }
-        resources {
-            excludes += "/META-INF/**"
+            useLegacyPackaging = true
+            keepDebugSymbols += "**/*.so"
         }
     }
-}
-
-// Explicitly prevent stripping of native libs to avoid NDK errors
-tasks.withType<com.android.build.gradle.internal.tasks.StripDebugSymbols>().configureEach {
-    enabled = false
 }
 
 flutter {
