@@ -11,8 +11,8 @@ import java.io.FileInputStream
 android {
     namespace = "com.imanflow.app"
     compileSdk = flutter.compileSdkVersion
-    // Use the NDK version that is verified to work locally
-    ndkVersion = "27.0.12077973"
+    // Use the NDK version requested by speech_to_text plugin
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
