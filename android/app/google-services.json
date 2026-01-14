@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "504848553840",
+    "project_id": "esas-67202",
+    "storage_bucket": "esas-67202.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504848553840:android:3a77090c0ea4dfcc4861b5",
+        "android_client_info": {
+          "package_name": "com.imanflow.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc-erPTsP28-5bUKy6GRhwWPKVGdaZd1k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

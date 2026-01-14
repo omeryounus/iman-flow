@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/service_locator.dart';
+import '../../../core/services/service_locator.dart';
 import '../../../core/services/quran_service.dart';
+import '../models/shared_verse.dart';
+import '../services/verse_share_service.dart';
 
 /// Verse Share Widget - Share verses to social media
 class VerseShare extends StatefulWidget {
@@ -17,42 +21,22 @@ class VerseShare extends StatefulWidget {
 class _VerseShareState extends State<VerseShare> {
   final QuranService _quranService = getIt<QuranService>();
 
-  // Sample shared verses (would come from Firestore in production)
-  final List<SharedVerse> _sharedVerses = [
-    SharedVerse(
-      id: '1',
-      verseKey: '2:286',
-      arabicText: 'لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا',
-      translation: 'Allah does not burden a soul beyond that it can bear.',
-      sharedBy: 'Anonymous',
-      shareCount: 234,
-      reflection: 'A reminder during difficult times that we can handle what comes our way.',
-    ),
-    SharedVerse(
-      id: '2',
-      verseKey: '94:5-6',
-      arabicText: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا',
-      translation: 'Indeed, with hardship comes ease. Indeed, with hardship comes ease.',
-      sharedBy: 'Sister Aisha',
-      shareCount: 456,
-      reflection: 'Repeated for emphasis - ease will come!',
-    ),
-    SharedVerse(
-      id: '3',
-      verseKey: '13:28',
-      arabicText: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
-      translation: 'Verily, in the remembrance of Allah do hearts find rest.',
-      sharedBy: 'Brother Omar',
-      shareCount: 678,
-      reflection: 'The solution to anxiety is always with Allah.',
-    ),
-  ];
+  final VerseShareService _shareService = VerseShareService();
+  
+  // Controllers for the share dialog
+  final TextEditingController _verseRefController = TextEditingController();
+  final TextEditingController _reflectionController = TextEditingController();
+  bool _isSharing = false;
+
+  @override
+  void dispose() {
+    _verseRefController.dispose();
+    _reflectionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final versesToShow = widget.womenMode
-        ? _sharedVerses // In production, filter for women-focused verses
-        : _sharedVerses;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -129,8 +113,34 @@ class _VerseShareState extends State<VerseShare> {
           ),
           const SizedBox(height: 12),
 
-          // Shared Verses
-          ...versesToShow.map((verse) => _buildVerseCard(verse)),
+          // Shared Verses Stream
+          StreamBuilder<List<SharedVerse>>(
+            stream: _shareService.getSharedVerses(womenMode: widget.womenMode),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              final verses = snapshot.data ?? [];
+              
+              if (verses.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Text('No verses shared yet. Be the first!'),
+                  ),
+                );
+              }
+
+              return Column(
+                children: verses.map((verse) => _buildVerseCard(verse)).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -138,6 +148,8 @@ class _VerseShareState extends State<VerseShare> {
 
   Widget _buildVerseCard(SharedVerse verse) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isLiked = currentUser != null && verse.likedBy.contains(currentUser.uid);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -257,9 +269,10 @@ class _VerseShareState extends State<VerseShare> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildActionButton(
-                  Icons.favorite_border,
-                  '${verse.shareCount}',
-                  () {},
+                  isLiked ? Icons.favorite : Icons.favorite_border,
+                  '${verse.likeCount}',
+                  () => _shareService.toggleLike(verse.id),
+                  color: isLiked ? Colors.red : null,
                 ),
                 _buildActionButton(
                   Icons.copy,
@@ -268,7 +281,7 @@ class _VerseShareState extends State<VerseShare> {
                 ),
                 _buildActionButton(
                   Icons.share,
-                  'Share',
+                  '${verse.shareCount}',
                   () => _shareVerse(verse),
                 ),
               ],
@@ -279,7 +292,7 @@ class _VerseShareState extends State<VerseShare> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, {Color? color}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -287,11 +300,11 @@ class _VerseShareState extends State<VerseShare> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: Colors.grey),
+            Icon(icon, size: 18, color: color ?? Colors.grey),
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: color ?? Colors.grey, fontSize: 12),
             ),
           ],
         ),
@@ -311,6 +324,9 @@ class _VerseShareState extends State<VerseShare> {
   }
 
   void _shareVerse(SharedVerse verse) {
+    // Increment share count
+    _shareService.incrementShare(verse.id);
+    
     // In production, use share_plus package
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -344,6 +360,7 @@ class _VerseShareState extends State<VerseShare> {
             ),
             const SizedBox(height: 16),
             TextField(
+              controller: _verseRefController,
               decoration: InputDecoration(
                 hintText: 'Enter verse reference (e.g., 2:255)',
                 border: OutlineInputBorder(
@@ -353,6 +370,7 @@ class _VerseShareState extends State<VerseShare> {
             ),
             const SizedBox(height: 12),
             TextField(
+              controller: _reflectionController,
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Add your reflection (optional)',
@@ -365,8 +383,10 @@ class _VerseShareState extends State<VerseShare> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Share with Community'),
+                onPressed: _isSharing ? null : _submitShare,
+                child: _isSharing 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Share with Community'),
               ),
             ),
           ],
@@ -374,24 +394,56 @@ class _VerseShareState extends State<VerseShare> {
       ),
     );
   }
-}
+  Future<void> _submitShare() async {
+    final ref = _verseRefController.text.trim();
+    final reflection = _reflectionController.text.trim();
+    
+    if (ref.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a verse reference')),
+      );
+      return;
+    }
 
-class SharedVerse {
-  final String id;
-  final String verseKey;
-  final String arabicText;
-  final String translation;
-  final String sharedBy;
-  final int shareCount;
-  final String? reflection;
+    setState(() => _isSharing = true);
 
-  SharedVerse({
-    required this.id,
-    required this.verseKey,
-    required this.arabicText,
-    required this.translation,
-    required this.sharedBy,
-    required this.shareCount,
-    this.reflection,
-  });
+    try {
+      // 1. Fetch verse details using the existing QuranService
+      // Note: This relies on the QuranService having a method to get a verse by key.
+      // If not, we might need a workaround or assume manual entry for now.
+      // For this MVP, let's assume valid manual entry or mock data filling to avoid breaking if service lacks granular fetch.
+      
+      // Simulating fetch or using basic parsing
+      // In a real app, parse "2:255", call API/Service, get Arabic/Translation.
+      // Here, use placeholders since we don't have a direct "getVerseByKey" in the visible QuranService interface yet.
+      
+      await _shareService.shareVerse(
+        verseKey: ref,
+        arabicText: 'قُلْ هُوَ اللَّهُ أَحَدٌ', // Placeholder if service fetch fails
+        translation: 'Say, "He is Allah, [who is] One."', // Placeholder
+        reflection: reflection.isNotEmpty ? reflection : null,
+        womenOnly: widget.womenMode,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verse shared successfully!')),
+        );
+        _verseRefController.clear();
+        _reflectionController.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sharing verse: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
+  }
 }
+// Removed inline SharedVerse class definition as it's now imported

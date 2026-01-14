@@ -306,6 +306,12 @@ class ImanFlowTheme {
       ),
     );
   }
+
+  static Color messageBubbleReceived(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey[800]!
+        : Colors.grey[200]!;
+  }
 }
 
 /// Arabic text style for Quran verses

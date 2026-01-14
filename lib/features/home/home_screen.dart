@@ -95,6 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             actions: [
               IconButton(
+                onPressed: () => context.push('/profile'),
+                icon: const Icon(Icons.account_circle_outlined),
+              ),
+              IconButton(
                 onPressed: () => context.push('/settings'),
                 icon: const Icon(Icons.settings_outlined),
               ),

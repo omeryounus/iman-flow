@@ -8,6 +8,7 @@ import '../features/devotionals/devotionals_screen.dart';
 import '../features/community/community_screen.dart';
 import '../features/premium/paywall_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/profile/profile_screen.dart';
 import '../shared/widgets/main_shell.dart';
 
 /// App Router using go_router
@@ -76,6 +77,11 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
   );
