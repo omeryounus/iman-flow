@@ -11,7 +11,7 @@ import java.io.FileInputStream
 android {
     namespace = "com.imanflow.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "28.2.13676358"
+    // ndkVersion = "28.2.13676358" // Let env default
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -72,4 +72,12 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+}
+
+// Explicitly prevent stripping of native libs to avoid NDK errors
+// Using string-based check to avoid Unresolved Reference errors
+tasks.configureEach {
+    if (name.contains("StripDebugSymbols")) {
+        enabled = false
+    }
 }
