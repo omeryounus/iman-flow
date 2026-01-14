@@ -1,7 +1,7 @@
 name: iman_flow
 description: "Iman Flow - Your Islamic Companion App"
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.11+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -65,6 +65,7 @@ dependencies:
   uuid: ^4.3.3
   get_it: ^7.7.0
   permission_handler: ^11.3.1
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
