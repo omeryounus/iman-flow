@@ -27,8 +27,8 @@ dependencies:
   geolocator: ^13.0.0
   geocoding: ^3.0.0
   
-  # AR (for AR Qibla)
-  ar_flutter_plugin: ^0.7.3
+  # AR (for AR Qibla) - Removed due to conflict with Firebase/nanopb
+  # ar_flutter_plugin: ^0.7.3
   
   # Audio & Media
   just_audio: ^0.9.36

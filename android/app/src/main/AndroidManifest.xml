@@ -1,4 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Explicitly remove permissions merged from plugins that we don't use yet -->
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+
     <application
         android:label="Iman Flow"
         android:name="${applicationName}"
