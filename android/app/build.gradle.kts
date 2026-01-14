@@ -82,7 +82,8 @@ dependencies {
 // Explicitly prevent stripping of native libs to avoid NDK errors
 // Using string-based check to avoid Unresolved Reference errors
 tasks.configureEach {
-    if (name.contains("StripDebugSymbols")) {
+    if (name.contains("strip", ignoreCase = true) && name.contains("symbols", ignoreCase = true)) {
+        println("Disabling stripping for task: $name")
         enabled = false
     }
 }
