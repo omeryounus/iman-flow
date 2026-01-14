@@ -62,7 +62,7 @@ class ImanFlowTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.cairo(
+        titleTextStyle: GoogleFonts.almarai(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: Colors.white,
@@ -91,7 +91,7 @@ class ImanFlowTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.cairo(
+          textStyle: GoogleFonts.almarai(
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -155,7 +155,7 @@ class ImanFlowTheme {
         foregroundColor: textPrimaryDark,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.cairo(
+        titleTextStyle: GoogleFonts.almarai(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: textPrimaryDark,
@@ -184,7 +184,7 @@ class ImanFlowTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.cairo(
+          textStyle: GoogleFonts.almarai(
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -229,77 +229,77 @@ class ImanFlowTheme {
         : textPrimaryDark;
     
     return TextTheme(
-      displayLarge: GoogleFonts.cairo(
+      displayLarge: GoogleFonts.almarai(
         fontSize: 32,
         fontWeight: FontWeight.bold,
         color: textColor,
       ),
-      displayMedium: GoogleFonts.cairo(
+      displayMedium: GoogleFonts.almarai(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: textColor,
       ),
-      displaySmall: GoogleFonts.cairo(
+      displaySmall: GoogleFonts.almarai(
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineLarge: GoogleFonts.cairo(
+      headlineLarge: GoogleFonts.almarai(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineMedium: GoogleFonts.cairo(
+      headlineMedium: GoogleFonts.almarai(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      headlineSmall: GoogleFonts.cairo(
+      headlineSmall: GoogleFonts.almarai(
         fontSize: 18,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      titleLarge: GoogleFonts.cairo(
+      titleLarge: GoogleFonts.almarai(
         fontSize: 16,
         fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      titleMedium: GoogleFonts.cairo(
+      titleMedium: GoogleFonts.almarai(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      titleSmall: GoogleFonts.cairo(
+      titleSmall: GoogleFonts.almarai(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      bodyLarge: GoogleFonts.cairo(
+      bodyLarge: GoogleFonts.almarai(
         fontSize: 16,
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
-      bodyMedium: GoogleFonts.cairo(
+      bodyMedium: GoogleFonts.almarai(
         fontSize: 14,
         fontWeight: FontWeight.normal,
         color: textColor,
       ),
-      bodySmall: GoogleFonts.cairo(
+      bodySmall: GoogleFonts.almarai(
         fontSize: 12,
         fontWeight: FontWeight.normal,
         color: textColor.withOpacity(0.7),
       ),
-      labelLarge: GoogleFonts.cairo(
+      labelLarge: GoogleFonts.almarai(
         fontSize: 14,
         fontWeight: FontWeight.w700,
         color: textColor,
       ),
-      labelMedium: GoogleFonts.cairo(
+      labelMedium: GoogleFonts.almarai(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: textColor,
       ),
-      labelSmall: GoogleFonts.cairo(
+      labelSmall: GoogleFonts.almarai(
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: textColor.withOpacity(0.7),
@@ -311,12 +311,13 @@ class ImanFlowTheme {
 /// Arabic text style for Quran verses
 /// Arabic text style for Quran verses
 class ArabicTextStyles {
+  // Scheherazade New is naturally smaller than Amiri, so we boost default size
   static TextStyle quranVerse({
-    double fontSize = 28,
+    double fontSize = 32, 
     Color? color,
-    double height = 2.2,
+    double height = 2.0,
   }) {
-    return GoogleFonts.amiriQuran(
+    return GoogleFonts.scheherazadeNew(
       fontSize: fontSize,
       height: height,
       color: color ?? ImanFlowTheme.textPrimaryLight,
@@ -324,11 +325,11 @@ class ArabicTextStyles {
   }
   
   static TextStyle quranVerseDark({
-    double fontSize = 28,
+    double fontSize = 32,
     Color? color,
-    double height = 2.2,
+    double height = 2.0,
   }) {
-    return GoogleFonts.amiriQuran(
+    return GoogleFonts.scheherazadeNew(
       fontSize: fontSize,
       height: height,
       color: color ?? ImanFlowTheme.textPrimaryDark,
