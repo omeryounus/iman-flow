@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/service_locator.dart';
@@ -118,11 +119,40 @@ class _VerseShareState extends State<VerseShare> {
             stream: _shareService.getSharedVerses(womenMode: widget.womenMode),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.orange, size: 48),
+                      const SizedBox(height: 8),
+                      Text('Unable to load verses.\n${snapshot.error}', textAlign: TextAlign.center),
+                    ],
+                  ),
+                );
               }
               
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                // Return a loading state that shows a hint if it takes too long (built-in delay)
+                return Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      FutureBuilder(
+                        future: Future.delayed(const Duration(seconds: 5)),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.done) {
+                            return const Text(
+                              'Connecting to Community...\nCheck your internet or Firebase/Firestore Rules.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
+                );
               }
               
               final verses = snapshot.data ?? [];
@@ -324,23 +354,22 @@ class _VerseShareState extends State<VerseShare> {
   }
 
   void _shareVerse(SharedVerse verse) {
-    // Increment share count
+    // Increment share count in background
     _shareService.incrementShare(verse.id);
     
-    // In production, use share_plus package
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening share dialog...'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Prepare share text
+    final text = 'Iman Flow Verse Share:\n\n${verse.arabicText}\n\n"${verse.translation}"\n\n- Quran ${verse.verseKey}\n\nDownload Iman Flow today!';
+    
+    // Use share_plus to share natively
+    Share.share(text, subject: 'Verse from Iman Flow');
   }
 
   void _showShareDialog() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Padding(

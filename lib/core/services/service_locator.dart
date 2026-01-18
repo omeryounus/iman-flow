@@ -7,6 +7,8 @@ import 'notification_service.dart';
 import 'streak_service.dart';
 import 'premium_service.dart';
 import 'settings_service.dart';
+import 'daily_content_service.dart';
+import '../../features/profile/services/user_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -21,6 +23,8 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<StreakService>(() => StreakService());
   getIt.registerLazySingleton<PremiumService>(() => PremiumService());
   getIt.registerLazySingleton<SettingsService>(() => SettingsService());
+  getIt.registerLazySingleton<DailyContentService>(() => DailyContentService());
+  getIt.registerLazySingleton<UserService>(() => UserService());
   
   // Initialize services that need async setup
   await getIt<SettingsService>().initialize();

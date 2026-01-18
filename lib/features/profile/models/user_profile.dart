@@ -7,6 +7,10 @@ class UserProfile {
   final DateTime joinedAt;
   final int versesSharedCount;
   final int likesReceivedCount;
+  final int prayerStreak;
+  final int quranStreak;
+  final int dhikrStreak;
+  final DateTime? lastActiveDate;
 
   UserProfile({
     required this.uid,
@@ -15,6 +19,10 @@ class UserProfile {
     required this.joinedAt,
     this.versesSharedCount = 0,
     this.likesReceivedCount = 0,
+    this.prayerStreak = 0,
+    this.quranStreak = 0,
+    this.dhikrStreak = 0,
+    this.lastActiveDate,
   });
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
@@ -26,6 +34,10 @@ class UserProfile {
       joinedAt: (data['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       versesSharedCount: data['versesSharedCount'] ?? 0,
       likesReceivedCount: data['likesReceivedCount'] ?? 0,
+      prayerStreak: data['prayerStreak'] ?? 0,
+      quranStreak: data['quranStreak'] ?? 0,
+      dhikrStreak: data['dhikrStreak'] ?? 0,
+      lastActiveDate: (data['lastActiveDate'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -36,6 +48,10 @@ class UserProfile {
       'joinedAt': joinedAt, // Usually not updated, but include for creation
       'versesSharedCount': versesSharedCount,
       'likesReceivedCount': likesReceivedCount,
+      'prayerStreak': prayerStreak,
+      'quranStreak': quranStreak,
+      'dhikrStreak': dhikrStreak,
+      'lastActiveDate': lastActiveDate,
     };
   }
   
@@ -45,6 +61,10 @@ class UserProfile {
     String? bio,
     int? versesSharedCount,
     int? likesReceivedCount,
+    int? prayerStreak,
+    int? quranStreak,
+    int? dhikrStreak,
+    DateTime? lastActiveDate,
   }) {
     return UserProfile(
       uid: uid,
@@ -53,6 +73,10 @@ class UserProfile {
       joinedAt: joinedAt,
       versesSharedCount: versesSharedCount ?? this.versesSharedCount,
       likesReceivedCount: likesReceivedCount ?? this.likesReceivedCount,
+      prayerStreak: prayerStreak ?? this.prayerStreak,
+      quranStreak: quranStreak ?? this.quranStreak,
+      dhikrStreak: dhikrStreak ?? this.dhikrStreak,
+      lastActiveDate: lastActiveDate ?? this.lastActiveDate,
     );
   }
 }

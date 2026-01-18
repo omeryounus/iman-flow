@@ -6,6 +6,9 @@ import '../../core/services/prayer_service.dart';
 import '../../core/services/streak_service.dart';
 import '../../core/services/quran_service.dart';
 import '../../core/services/premium_service.dart';
+import '../../core/services/daily_content_service.dart';
+import '../../features/profile/services/user_service.dart';
+import '../../features/profile/models/user_profile.dart';
 import 'package:adhan/adhan.dart';
 
 /// Home Screen - Personalized Dashboard
@@ -36,10 +39,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData() async {
     try {
       final results = await Future.wait([
-        _prayerService.getPrayerTimes().catchError((_) => null),
+        _prayerService.getPrayerTimes().then((v) => v as PrayerTimes?).catchError((_) => null),
         _streakService.getAllStreaks(),
-        _quranService.getRandomVerse().catchError((_) => null),
+        getIt<DailyContentService>().getDailyVerse().then((v) => v as Verse?).catchError((_) => null),
+        getIt<UserService>().currentUserProfileStream.first.catchError((_) => null),
       ]);
+
+      // Sync streaks if user is logged in
+      final profile = results[3] as UserProfile?;
+      if (profile != null) {
+        await _streakService.syncWithRemote(
+          profile.prayerStreak, 
+          profile.quranStreak, 
+          profile.dhikrStreak
+        );
+        // Refresh local streaks after sync
+        results[1] = await _streakService.getAllStreaks();
+      }
 
       setState(() {
         _prayerTimes = results[0] as PrayerTimes?;

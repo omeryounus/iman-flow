@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'service_locator.dart';
+import '../../features/profile/services/user_service.dart';
 
 /// Streak Service for tracking user engagement
 class StreakService {
@@ -10,6 +12,8 @@ class StreakService {
   static const String _lastQuranDateKey = 'last_quran_date';
   static const String _lastDhikrDateKey = 'last_dhikr_date';
   static const String _prayerLogKey = 'prayer_log';
+
+  final UserService _userService = getIt<UserService>();
 
   /// Get current prayer streak
   Future<int> getPrayerStreak() async {
@@ -100,6 +104,24 @@ class StreakService {
     
     await prefs.setInt(streakKey, currentStreak);
     await prefs.setString(lastDateKey, today);
+    
+    // Sync to Firestore
+    _syncStreaks();
+  }
+
+  /// Sync local streaks to Firestore
+  Future<void> _syncStreaks() async {
+    try {
+      final streaks = await getAllStreaks();
+      await _userService.updateStreaks(
+        prayerStreak: streaks.prayerStreak,
+        quranStreak: streaks.quranStreak,
+        dhikrStreak: streaks.dhikrStreak,
+        lastActiveDate: DateTime.now(),
+      );
+    } catch (_) {
+      // Silent fail
+    }
   }
 
   /// Reset all streaks (for testing)
@@ -112,6 +134,31 @@ class StreakService {
     await prefs.remove(_lastQuranDateKey);
     await prefs.remove(_lastDhikrDateKey);
     await prefs.remove(_prayerLogKey);
+  }
+
+  /// Sync remote streaks to local storage if local is empty/behind
+  /// This handles "Restore on new device" scenario
+  Future<void> syncWithRemote(int remotePrayer, int remoteQuran, int remoteDhikr) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Simple logic: If local is 0, trust remote.
+    // robust logic would check timestamps, but we'll keep it simple for MVP.
+    // If we want to be safe: take the MAX of local vs remote.
+    
+    final localPrayer = prefs.getInt(_prayerStreakKey) ?? 0;
+    if (remotePrayer > localPrayer) {
+      await prefs.setInt(_prayerStreakKey, remotePrayer);
+    }
+    
+    final localQuran = prefs.getInt(_quranStreakKey) ?? 0;
+    if (remoteQuran > localQuran) {
+      await prefs.setInt(_quranStreakKey, remoteQuran);
+    }
+
+    final localDhikr = prefs.getInt(_dhikrStreakKey) ?? 0;
+    if (remoteDhikr > localDhikr) {
+      await prefs.setInt(_dhikrStreakKey, remoteDhikr);
+    }
   }
 
   /// Get today's completed prayers

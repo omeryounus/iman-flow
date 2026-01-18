@@ -56,6 +56,27 @@ class UserService {
       'versesSharedCount': FieldValue.increment(1),
     });
   }
+  Future<void> updateStreaks({
+    required int prayerStreak,
+    required int quranStreak,
+    required int dhikrStreak,
+    DateTime? lastActiveDate,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final updates = {
+      'prayerStreak': prayerStreak,
+      'quranStreak': quranStreak,
+      'dhikrStreak': dhikrStreak,
+      'lastActiveDate': lastActiveDate ?? DateTime.now(),
+    };
+
+    await _usersCollection.doc(user.uid).update(updates).catchError((e) {
+      // Fire and forget, or log error
+      print('Error syncing streaks: $e');
+    });
+  }
 }
 
 extension StreamSwitchMap<T> on Stream<T> {
