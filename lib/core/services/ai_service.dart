@@ -128,10 +128,11 @@ RESPONSE FORMAT:
 
       return _parseResponse(response.data);
     } catch (e) {
-      // Handle DioException manually to check response status
+      print('AI Service Error: $e');
       if (e is DioException) {
-         if (e.response?.statusCode == 403) {
-           return 'Access denied. Please check your AWS credentials and model access.';
+         if (e.response != null) {
+           print('Bedrock Error Body: ${e.response?.data}');
+           return 'AWS Bedrock Error (${e.response?.statusCode}): ${e.response?.data}';
          }
          return 'Error connecting to AWS Bedrock: ${e.message}';
       }
