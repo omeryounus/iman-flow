@@ -13,7 +13,7 @@ class PaywallScreen extends StatefulWidget {
 
 class _PaywallScreenState extends State<PaywallScreen> {
   final PremiumService _premiumService = getIt<PremiumService>();
-  int _selectedPackageIndex = 1; // Default to yearly (best value)
+  int _selectedPackageIndex = 0; // Default to the only package
   bool _isLoading = false;
 
   @override
@@ -195,7 +195,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       children: List.generate(_premiumService.packages.length, (index) {
         final package = _premiumService.packages[index];
         final isSelected = index == _selectedPackageIndex;
-        final isBestValue = index == 1; // Yearly
+        // final isBestValue = index == 1; // Removed for single package
 
         return GestureDetector(
           onTap: () => setState(() => _selectedPackageIndex = index),
@@ -255,27 +255,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (isBestValue) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: ImanFlowTheme.accentGold,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'BEST VALUE',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                          // Best Value badge removed
                         ],
                       ),
                       const SizedBox(height: 4),

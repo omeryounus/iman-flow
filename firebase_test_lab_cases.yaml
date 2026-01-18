@@ -1,0 +1,53 @@
+# Firebase Test Lab AI Agent Test Cases
+# These cases guide the AI agent to verify core functionality across the app.
+
+- displayName: Smoke Test - Tab Navigation
+  id: smoke_test_tabs
+  steps:
+    - goal: Verify Home Tab
+      hint: The app starts on the Home screen. Look for "Iman Flow" or "Verse of the Day".
+      successCriteria: The "Home" tab is active.
+    - goal: Go to Prayer Screen
+      hint: Tap the "Prayer" tab in the bottom navigation bar (clock icon).
+      successCriteria: Navigation switches to the Prayer screen.
+    - goal: Go to Quran Screen
+      hint: Tap the "Quran & AI" tab in the bottom navigation bar (book icon).
+      successCriteria: Navigation switches to the Quran screen.
+    - goal: Go to Devotionals Screen
+      hint: Tap the "Devotionals" tab in the bottom navigation bar (heart icon).
+      successCriteria: Navigation switches to the Devotionals screen.
+    - goal: Go to Community Screen
+      hint: Tap the "Community" tab in the bottom navigation bar (people icon).
+      successCriteria: Navigation switches to the Community screen.
+
+- displayName: Feature Test - Quran Reading
+  id: feature_test_quran
+  steps:
+    - goal: Open Quran Tab
+      hint: Tap the "Quran & AI" tab at the bottom.
+      successCriteria: Surah list is visible.
+    - goal: Open First Surah
+      hint: Tap on "Al-Fatiha" or the first item in the list.
+      successCriteria: The full text of Al-Fatiha is displayed.
+    - goal: Go back
+      hint: Tap the back button in the top left.
+      successCriteria: Returned to the Surah list.
+
+- displayName: Feature Test - AI Chat
+  id: feature_test_ai
+  steps:
+    - goal: Open AI Chat
+      hint: Tap the Floating Action Button (FAB) with the sparkle/AI icon in the bottom right corner.
+      successCriteria: The AI Chat interface opens with a text input field ("Ask about Islam...").
+    - goal: Close AI Chat
+      hint: Tap the back button or swipe down if it is a modal.
+      successCriteria: Returned to the previous screen.
+
+- displayName: Feature Test - Community Feed
+  id: feature_test_community
+  steps:
+    - goal: Open Community Tab
+      hint: Tap the "Community" tab.
+    - goal: Check for Guest/Auth State
+      hint: If a "Sign In" button is visible, the test passes (guest mode). If a feed is visible, the test passes (auth mode).
+      successCriteria: Either "Join the Community" text or a list of shared verses is visible.

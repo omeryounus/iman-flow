@@ -85,26 +85,10 @@ class PremiumService {
   /// Available subscription packages
   final List<SubscriptionPackage> packages = const [
     SubscriptionPackage(
-      id: 'iman_flow_pro_monthly',
-      title: 'Monthly',
-      description: 'Billed monthly, cancel anytime',
-      price: '\$4.99/mo',
-      tier: PremiumTier.monthly,
-      duration: Duration(days: 30),
-    ),
-    SubscriptionPackage(
-      id: 'iman_flow_pro_yearly',
-      title: 'Yearly',
-      description: 'Save 50%, best value',
-      price: '\$29.99/yr',
-      tier: PremiumTier.yearly,
-      duration: Duration(days: 365),
-    ),
-    SubscriptionPackage(
-      id: 'iman_flow_pro_lifetime',
-      title: 'Lifetime',
+      id: 'iman_flow_lifetime',
+      title: 'Lifetime Access',
       description: 'One-time purchase, forever access',
-      price: '\$79.99',
+      price: '\$2.99', // Fallback display string, actual price from Store
       tier: PremiumTier.lifetime,
       duration: Duration(days: 36500), // ~100 years
     ),
