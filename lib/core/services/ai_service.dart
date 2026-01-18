@@ -10,10 +10,11 @@ class AIService {
   // AWS Configuration
   String? _accessKeyId;
   String? _secretAccessKey;
+  String? _apiKey;
   String _region = 'us-east-1';
   String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
   
-  bool get _isConfigured => _accessKeyId != null && _secretAccessKey != null;
+  bool get _isConfigured => (_accessKeyId != null && _secretAccessKey != null) || (_apiKey != null && _apiKey!.isNotEmpty);
 
   /// System prompt for scholar-validated responses
   static const String _systemPrompt = '''
@@ -36,58 +37,73 @@ RESPONSE FORMAT:
 ''';
 
   void configure({
-    required String accessKeyId, 
-    required String secretAccessKey, 
-    String region = 'us-east-1',
+    String? accessKeyId, 
+    String? secretAccessKey, 
+    String? apiKey,
+    required String region,
   }) {
     _accessKeyId = accessKeyId;
     _secretAccessKey = secretAccessKey;
+    _apiKey = apiKey;
     _region = region;
   }
 
   /// Send a message to AWS Bedrock
-  Future<String> sendMessage(String userMessage, {List<Map<String, String>>? context}) async {
+  Future<String> sendMessage(String message) async {
     if (!_isConfigured) {
-      return 'Please configure the AI service with AWS credentials.';
+      return "AI Service not configured. Please check your settings.";
     }
 
     try {
-      // 1. Prepare the payload for Claude 3 (Messages API)
-      final messages = [
-        if (context != null)
-          ...context.map((m) => {
-            'role': m['role'] == 'user' ? 'user' : 'assistant',
-            'content': m['content'],
-          }),
-        {'role': 'user', 'content': userMessage}
-      ];
-
-      final body = jsonEncode({
-        'anthropic_version': 'bedrock-2023-05-31',
-        'max_tokens': 1024,
-        'system': _systemPrompt,
-        'messages': messages,
-        'temperature': 0.7,
+      final endpoint = 'https://bedrock-runtime.$_region.amazonaws.com/model/$_modelId/invoke';
+      final payload = jsonEncode({
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1000,
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "$_systemPrompt\n\nUser Question: $message"
+              }
+            ]
+          }
+        ]
       });
 
-      // 2. Create the request
-      final endpoint = Uri.parse('https://bedrock-runtime.$_region.amazonaws.com/model/$_modelId/invoke');
+      // USE API KEY IF AVAILABLE (Simpler, works with "ABSK..." keys)
+      if (_apiKey != null && _apiKey!.isNotEmpty) {
+        final response = await _dio.post(
+          endpoint,
+          data: payload,
+          options: Options(
+            headers: {
+              'content-type': 'application/json',
+              'accept': 'application/json',
+              'Authorization': 'Bearer $_apiKey',
+            },
+          ),
+        );
+        return _parseResponse(response.data);
+      }
+
+      // FALLBACK TO SIGV4 (IAM Access Keys)
       final request = AWSHttpRequest(
         method: AWSHttpMethod.post,
-        uri: endpoint,
-        headers: const {
+        uri: Uri.parse(endpoint),
+        headers: {
           'content-type': 'application/json',
           'accept': 'application/json',
         },
-        body: utf8.encode(body),
+        body: utf8.encode(payload),
       );
 
-      // 3. Sign the request
       final signer = AWSSigV4Signer(
         credentialsProvider: AWSCredentialsProvider(
           AWSCredentials(
-            _accessKeyId!,
-            _secretAccessKey!,
+            _accessKeyId ?? '',
+            _secretAccessKey ?? '',
           ),
         ),
       );
@@ -102,34 +118,39 @@ RESPONSE FORMAT:
         credentialScope: scope,
       );
 
-      // 4. Send using Dio (converting headers)
-      final response = await _dio.postUri(
+      final response = await _dio.post(
         endpoint,
-        data: body,
+        data: payload,
         options: Options(
           headers: signedRequest.headers,
-          responseType: ResponseType.json,
         ),
       );
 
-      // 5. Parse response
-      final data = response.data;
+      return _parseResponse(response.data);
+    } catch (e) {
+      // Handle DioException manually to check response status
+      if (e is DioException) {
+         if (e.response?.statusCode == 403) {
+           return 'Access denied. Please check your AWS credentials and model access.';
+         }
+         return 'Error connecting to AWS Bedrock: ${e.message}';
+      }
+      return "Sorry, I couldn't process your request at this moment: $e";
+    }
+  }
+
+  String _parseResponse(dynamic data) {
+    try {
       if (data is Map<String, dynamic> && data.containsKey('content')) {
-        final contentList = data['content'] as List;
-        if (contentList.isNotEmpty) {
-          return contentList.first['text'] as String;
+        final content = data['content'] as List;
+        if (content.isNotEmpty) {
+          return content[0]['text'].toString();
         }
       }
-      return 'No response received from Bedrock.';
-
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 403) {
-        return 'Access denied. Please check your AWS credentials and model access.';
-      }
-      return 'Error connecting to AWS Bedrock: ${e.message}';
     } catch (e) {
-      return 'An error occurred: $e';
+      print('Parsing Error: $e');
     }
+    return "I received a response but couldn't understand it.";
   }
 
   /// Generate personalized Dua based on user's situation
