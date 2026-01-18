@@ -1,16 +1,20 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:aws_signature_v4/aws_signature_v4.dart';
+import 'package:aws_common/aws_common.dart';
 
-/// AI Service for Islamic Q&A with RAG pipeline
+/// AI Service for Islamic Q&A using AWS Bedrock
 class AIService {
   final Dio _dio = Dio();
   
-  // Configure your AI provider here
-  static const String _groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-  static const String _openaiApiUrl = 'https://api.openai.com/v1/chat/completions';
+  // AWS Configuration
+  String? _accessKeyId;
+  String? _secretAccessKey;
+  String _region = 'us-east-1';
+  String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
   
-  String? _apiKey;
-  String _provider = 'groq'; // 'groq' or 'openai'
-  
+  bool get _isConfigured => _accessKeyId != null && _secretAccessKey != null;
+
   /// System prompt for scholar-validated responses
   static const String _systemPrompt = '''
 You are an Islamic knowledge assistant named "Iman Flow AI". Your purpose is to help Muslims learn about their faith with accurate, authentic information.
@@ -31,47 +35,98 @@ RESPONSE FORMAT:
 - End with a brief beneficial reminder or dua when appropriate
 ''';
 
-  void configure({required String apiKey, String provider = 'groq'}) {
-    _apiKey = apiKey;
-    _provider = provider;
+  void configure({
+    required String accessKeyId, 
+    required String secretAccessKey, 
+    String region = 'us-east-1',
+  }) {
+    _accessKeyId = accessKeyId;
+    _secretAccessKey = secretAccessKey;
+    _region = region;
   }
 
-  /// Send a message to the AI
+  /// Send a message to AWS Bedrock
   Future<String> sendMessage(String userMessage, {List<Map<String, String>>? context}) async {
-    if (_apiKey == null) {
-      return 'Please configure the AI service with an API key.';
+    if (!_isConfigured) {
+      return 'Please configure the AI service with AWS credentials.';
     }
 
-    final messages = <Map<String, String>>[
-      {'role': 'system', 'content': _systemPrompt},
-      if (context != null) ...context,
-      {'role': 'user', 'content': userMessage},
-    ];
-
     try {
-      final response = await _dio.post(
-        _provider == 'groq' ? _groqApiUrl : _openaiApiUrl,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $_apiKey',
-            'Content-Type': 'application/json',
-          },
-        ),
-        data: {
-          'model': _provider == 'groq' ? 'llama-3.1-70b-versatile' : 'gpt-4-turbo-preview',
-          'messages': messages,
-          'max_tokens': 1024,
-          'temperature': 0.7,
+      // 1. Prepare the payload for Claude 3 (Messages API)
+      final messages = [
+        if (context != null)
+          ...context.map((m) => {
+            'role': m['role'] == 'user' ? 'user' : 'assistant',
+            'content': m['content'],
+          }),
+        {'role': 'user', 'content': userMessage}
+      ];
+
+      final body = jsonEncode({
+        'anthropic_version': 'bedrock-2023-05-31',
+        'max_tokens': 1024,
+        'system': _systemPrompt,
+        'messages': messages,
+        'temperature': 0.7,
+      });
+
+      // 2. Create the request
+      final endpoint = Uri.parse('https://bedrock-runtime.$_region.amazonaws.com/model/$_modelId/invoke');
+      final request = AWSHttpRequest(
+        method: AWSHttpMethod.post,
+        uri: endpoint,
+        headers: const {
+          'content-type': 'application/json',
+          'accept': 'application/json',
         },
+        body: utf8.encode(body),
       );
 
-      final content = response.data['choices'][0]['message']['content'];
-      return content ?? 'No response received.';
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        return 'Invalid API key. Please check your configuration.';
+      // 3. Sign the request
+      final signer = AWSSigV4Signer(
+        credentialsProvider: AWSCredentialsProvider(
+          AWSCredentials(
+            _accessKeyId!,
+            _secretAccessKey!,
+          ),
+        ),
+      );
+
+      final scope = AWSCredentialScope(
+        region: _region,
+        service: AWSService.bedrock,
+      );
+
+      final signedRequest = await signer.sign(
+        request,
+        credentialScope: scope,
+      );
+
+      // 4. Send using Dio (converting headers)
+      final response = await _dio.postUri(
+        endpoint,
+        data: body,
+        options: Options(
+          headers: signedRequest.headers,
+          responseType: ResponseType.json,
+        ),
+      );
+
+      // 5. Parse response
+      final data = response.data;
+      if (data is Map<String, dynamic> && data.containsKey('content')) {
+        final contentList = data['content'] as List;
+        if (contentList.isNotEmpty) {
+          return contentList.first['text'] as String;
+        }
       }
-      return 'Error connecting to AI service: ${e.message}';
+      return 'No response received from Bedrock.';
+
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        return 'Access denied. Please check your AWS credentials and model access.';
+      }
+      return 'Error connecting to AWS Bedrock: ${e.message}';
     } catch (e) {
       return 'An error occurred: $e';
     }

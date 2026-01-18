@@ -30,4 +30,12 @@ Future<void> setupServiceLocator() async {
   await getIt<SettingsService>().initialize();
   await getIt<NotificationService>().initialize();
   await getIt<PremiumService>().initialize();
+  
+  // Configure AI Service
+  // Pass keys via --dart-define=AWS_ACCESS_KEY=... or hardcode here for testing
+  getIt<AIService>().configure(
+    accessKeyId: const String.fromEnvironment('AWS_ACCESS_KEY', defaultValue: 'YOUR_ACCESS_KEY'),
+    secretAccessKey: const String.fromEnvironment('AWS_SECRET_KEY', defaultValue: 'YOUR_SECRET_KEY'),
+    region: const String.fromEnvironment('AWS_REGION', defaultValue: 'us-east-1'),
+  );
 }
