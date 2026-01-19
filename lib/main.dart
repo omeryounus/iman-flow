@@ -12,10 +12,6 @@ void main() async {
   
   // Enable Edge-to-Edge for Android 15+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.transparent,
-    statusBarColor: Colors.transparent,
-  ));
   
   // Initialize Firebase (optional - app works in demo mode without it)
   try {
