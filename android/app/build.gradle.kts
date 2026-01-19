@@ -13,7 +13,7 @@ import java.io.FileInputStream
 
 android {
     namespace = "com.imanflow.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     // Use the NDK version requested by speech_to_text plugin
     ndkVersion = "28.2.13676358"
 
@@ -33,7 +33,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
