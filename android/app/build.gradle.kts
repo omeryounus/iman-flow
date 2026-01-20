@@ -15,8 +15,6 @@ import java.io.FileInputStream
 android {
     namespace = "com.imanflow.app"
     compileSdk = 35
-    // Use the NDK version requested by speech_to_text plugin
-    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -61,17 +59,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Keep symbol table for stack traces but avoid full debug info stripping crashes
-            ndk {
-                debugSymbolLevel = "SYMBOL_TABLE"
-            }
-        }
-    }
-
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-            keepDebugSymbols += "**/*.so"
         }
     }
 }
@@ -90,13 +77,4 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-}
-
-// Explicitly prevent stripping of native libs to avoid NDK errors
-// Using string-based check to avoid Unresolved Reference errors
-tasks.configureEach {
-    if (name.contains("strip", ignoreCase = true) && name.contains("symbols", ignoreCase = true)) {
-        println("Disabling stripping for task: $name")
-        enabled = false
-    }
 }
