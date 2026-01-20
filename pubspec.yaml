@@ -68,6 +68,7 @@ dependencies:
   share_plus: ^12.0.1
   aws_signature_v4: ^0.6.10
   aws_common: ^0.7.12
+  firebase_crashlytics: ^4.3.10
 
 dev_dependencies:
   flutter_test:
