@@ -12,7 +12,8 @@ class AIService {
   String? _secretAccessKey;
   String? _apiKey;
   String _region = 'us-east-1';
-  String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
+  // String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
+  String _modelId = 'amazon.nova-lite-v1:0';
   
   bool get _isConfigured => (_accessKeyId != null && _secretAccessKey != null) || (_apiKey != null && _apiKey!.isNotEmpty);
 
@@ -56,20 +57,25 @@ RESPONSE FORMAT:
 
     try {
       final endpoint = 'https://bedrock-runtime.$_region.amazonaws.com/model/$_modelId/invoke';
+      
+      // Amazon Nova Lite Payload Structure
       final payload = jsonEncode({
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 1000,
+        "system": [
+          { "text": _systemPrompt }
+        ],
         "messages": [
           {
             "role": "user",
             "content": [
-              {
-                "type": "text",
-                "text": "$_systemPrompt\n\nUser Question: $message"
-              }
+              { "text": message }
             ]
           }
-        ]
+        ],
+        "inferenceConfig": {
+          "maxNewTokens": 1000,
+          "temperature": 0.7,
+          "topP": 0.9
+        }
       });
 
       // USE API KEY IF AVAILABLE (Simpler, works with "ABSK..." keys)
@@ -142,10 +148,24 @@ RESPONSE FORMAT:
 
   String _parseResponse(dynamic data) {
     try {
-      if (data is Map<String, dynamic> && data.containsKey('content')) {
-        final content = data['content'] as List;
-        if (content.isNotEmpty) {
-          return content[0]['text'].toString();
+      // Parsing logic for Amazon Nova Lite
+      // Response format: { "output": { "message": { "content": [ { "text": "..." } ] } } }
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey('output')) {
+          final output = data['output'];
+          if (output is Map<String, dynamic> && output.containsKey('message')) {
+            final message = output['message'];
+            if (message is Map<String, dynamic> && message.containsKey('content')) {
+              final content = message['content'] as List;
+              if (content.isNotEmpty) {
+                return content[0]['text'].toString();
+              }
+            }
+          }
+        }
+        // Fallback for Claude format (if switching back remains an option)
+        if (data.containsKey('content') && data['content'] is List) {
+           return (data['content'] as List)[0]['text'].toString();
         }
       }
     } catch (e) {
