@@ -33,8 +33,8 @@ class _DevotionalsScreenState extends State<DevotionalsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       child: Column(
         children: [
           const TopBar(title: "Dhikr & Inspiration", subtitle: "Connect with Allah"),
@@ -68,9 +68,11 @@ class _DevotionalsScreenState extends State<DevotionalsScreen> {
           const SizedBox(height: 16),
 
           // Content
-          EnterAnim(
-            key: ValueKey(_selectedIndex),
-            child: _buildContent(),
+          Expanded(
+            child: EnterAnim(
+              key: ValueKey(_selectedIndex),
+              child: _buildContent(),
+            ),
           ),
         ],
       ),

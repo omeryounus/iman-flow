@@ -21,8 +21,13 @@ class AudioService {
 
   /// Play audio from local asset
   Future<void> playAsset(String assetPath) async {
-    await _player.setAsset(assetPath);
-    await _player.play();
+    try {
+      await _player.setAsset(assetPath);
+      await _player.play();
+    } catch (e) {
+      print("AudioService: Error playing asset $assetPath: $e");
+      // Optionally notify user via a stream or service if needed
+    }
   }
 
   /// Play cached audio (downloads if not cached)

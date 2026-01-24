@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/glass_widgets.dart';
+import '../../shared/widgets/premium_background.dart';
 import '../../core/services/settings_service.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/services/service_locator.dart';
+import '../profile/models/user_profile.dart';
+import '../profile/services/user_service.dart';
 
 /// Settings Screen - Theme, Location, Timezone options
 class SettingsScreen extends StatefulWidget {
@@ -14,6 +18,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final SettingsService _settingsService = getIt<SettingsService>();
+  final AuthService _authService = getIt<AuthService>();
+  final UserService _userService = getIt<UserService>();
   bool _isUpdatingLocation = false;
 
   final List<String> _timezones = [
@@ -24,40 +30,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
-      child: Column(
-        children: [
-          const TopBar(title: "Settings", subtitle: "Preferences & Config"),
-          const SizedBox(height: 24),
-
-          StreamBuilder<UserSettings>(
-            stream: _settingsService.settingsStream,
-            initialData: _settingsService.settings,
-            builder: (context, snapshot) {
-              final settings = snapshot.data ?? const UserSettings();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
+      children: [
+        const PremiumBackgroundWithParticles(),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 32),
+              child: Column(
                 children: [
-                  _buildSectionHeader('Appearance'),
-                  _buildThemeSelector(settings),
+                  Row(
+                    children: [
+                      const BackButton(color: Colors.white),
+                      const Expanded(child: TopBar(title: "Settings", subtitle: "Preferences & Config")),
+                    ],
+                  ),
                   const SizedBox(height: 24),
 
-                  _buildSectionHeader('Location'),
-                  _buildLocationSettings(settings),
-                  const SizedBox(height: 24),
+                  StreamBuilder<UserSettings>(
+                    stream: _settingsService.settingsStream,
+                    initialData: _settingsService.settings,
+                    builder: (context, snapshot) {
+                      final settings = snapshot.data ?? const UserSettings();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader('Account'),
+                          _buildAccountSection(),
+                          const SizedBox(height: 24),
 
-                  _buildSectionHeader('Timezone'),
-                  _buildTimezoneSettings(settings),
-                  const SizedBox(height: 24),
+                          _buildSectionHeader('Appearance'),
+                          _buildThemeSelector(settings),
+                          const SizedBox(height: 24),
 
-                  if (settings.latitude != null) _buildLocationInfo(settings),
+                          _buildSectionHeader('Location'),
+                          _buildLocationSettings(settings),
+                          const SizedBox(height: 24),
+
+                          _buildSectionHeader('Timezone'),
+                          _buildTimezoneSettings(settings),
+                          const SizedBox(height: 24),
+
+                          if (settings.latitude != null) _buildLocationInfo(settings),
+                        ],
+                      );
+                    },
+                  ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -203,6 +229,125 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const Text('Coordinates input UI placeholder', style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountSection() {
+    return StreamBuilder<UserProfile?>(
+      stream: _userService.currentUserProfileStream,
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final user = _authService.currentUser;
+
+        return Glass(
+          radius: 16,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              if (user == null)
+                ListTile(
+                  leading: const Icon(Icons.login_rounded, color: ImanFlowTheme.gold),
+                  title: const Text('Sign In', style: TextStyle(color: Colors.white)),
+                  subtitle: const Text('Sync your streaks and data', style: TextStyle(fontSize: 12, color: Colors.white60)),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+                  onTap: () => _showLoginOptions(),
+                )
+              else ...[
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: ImanFlowTheme.gold.withOpacity(0.1),
+                    child: Text(
+                      (profile?.displayName ?? user.email ?? 'U')[0].toUpperCase(),
+                      style: const TextStyle(color: ImanFlowTheme.gold, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  title: Text(profile?.displayName ?? user.email ?? 'Authenticated User', style: const TextStyle(color: Colors.white)),
+                  subtitle: Text(user.isAnonymous ? 'Anonymous Account' : (user.email ?? 'Logged In'), style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                ),
+                Divider(height: 1, color: Colors.white.withOpacity(0.1), indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                  title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent)),
+                  onTap: () => _authService.signOut(),
+                ),
+                Divider(height: 1, color: Colors.white.withOpacity(0.1), indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.delete_forever_rounded, color: Colors.white54),
+                  title: const Text('Delete Account', style: TextStyle(color: Colors.white54)),
+                  onTap: () => _showDeleteConfirm(),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLoginOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ImanFlowTheme.bgMid,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _authService.signInWithGoogle();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
+                icon: const Icon(Icons.login), // Add Google icon if you have it
+                label: const Text('Sign in with Google'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  _authService.signInAnonymously();
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
+                icon: const Icon(Icons.person_outline),
+                label: const Text('Continue Anonymously'),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ImanFlowTheme.bgMid,
+        title: const Text('Delete Account?', style: TextStyle(color: Colors.white)),
+        content: const Text('This will permanently delete your profile, streaks, and all data. This action cannot be undone.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              _authService.deleteAccount();
+              Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+          ),
         ],
       ),
     );

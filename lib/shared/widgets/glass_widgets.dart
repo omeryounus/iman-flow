@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 
 /// Fade & Slide Entry Animation
@@ -118,10 +119,17 @@ class TopBar extends StatelessWidget {
             ],
           ),
         ),
-        Glass(
-          radius: 18,
-          padding: const EdgeInsets.all(10),
-          child: Icon(Icons.settings_rounded, color: Colors.white.withOpacity(.85), size: 22),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push('/settings'),
+            borderRadius: BorderRadius.circular(18),
+            child: Glass(
+              radius: 18,
+              padding: const EdgeInsets.all(10),
+              child: Icon(Icons.settings_rounded, color: Colors.white.withOpacity(.85), size: 22),
+            ),
+          ),
         ),
       ],
     );

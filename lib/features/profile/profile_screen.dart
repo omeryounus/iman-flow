@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/glass_widgets.dart';
+import '../../shared/widgets/premium_background.dart';
+import '../../core/services/service_locator.dart';
+import '../../core/services/auth_service.dart';
 import 'models/user_profile.dart';
 import 'services/user_service.dart';
 
@@ -13,36 +17,53 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final UserService _userService = UserService();
+  final UserService _userService = getIt<UserService>();
+  final AuthService _authService = getIt<AuthService>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
-      child: Column(
-        children: [
-          const TopBar(title: "My Profile", subtitle: "Your spiritual journey"),
-          const SizedBox(height: 24),
-          
-          StreamBuilder<User?>(
-            stream: _auth.authStateChanges(),
-            builder: (context, authSnapshot) {
-              if (authSnapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator(color: ImanFlowTheme.gold);
-              final user = authSnapshot.data;
-              if (user == null) return _buildGuestView();
+    return Stack(
+      children: [
+        const PremiumBackgroundWithParticles(),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 32),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const BackButton(color: Colors.white),
+                      const Expanded(child: TopBar(title: "My Profile", subtitle: "Your spiritual journey")),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  StreamBuilder<User?>(
+                    stream: _auth.authStateChanges(),
+                    builder: (context, authSnapshot) {
+                      if (authSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
+                      final user = authSnapshot.data;
+                      if (user == null) return _buildGuestView();
 
-              return StreamBuilder<UserProfile?>(
-                stream: _userService.currentUserProfileStream,
-                builder: (context, profileSnapshot) {
-                  final profile = profileSnapshot.data;
-                  return _buildUserProfileView(user, profile);
-                },
-              );
-            },
+                      return StreamBuilder<UserProfile?>(
+                        stream: _userService.currentUserProfileStream,
+                        builder: (context, profileSnapshot) {
+                          final profile = profileSnapshot.data;
+                          return _buildUserProfileView(user, profile);
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -65,14 +86,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Auth flow not implemented in this demo'), backgroundColor: ImanFlowTheme.bgMid));
-              },
+              onPressed: () => _showLoginOptions(),
               style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 16)),
               child: const Text('Sign In / Sign Up'),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLoginOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ImanFlowTheme.bgMid,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _authService.signInWithGoogle();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  _authService.signInAnonymously();
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
+                icon: const Icon(Icons.person_outline),
+                label: const Text('Continue Anonymously'),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -130,8 +195,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
                _buildSettingsTile(Icons.edit, 'Edit Profile', () {}),
-               _buildSettingsTile(Icons.settings, 'Account Settings', () {}),
-               _buildSettingsTile(Icons.logout, 'Sign Out', () async => await FirebaseAuth.instance.signOut(), isDestructive: true, showDivider: false),
+               _buildSettingsTile(Icons.settings, 'Account Settings', () => context.push('/settings')),
+               _buildSettingsTile(Icons.logout, 'Sign Out', () => _authService.signOut(), isDestructive: true, showDivider: false),
             ],
           ),
         ),

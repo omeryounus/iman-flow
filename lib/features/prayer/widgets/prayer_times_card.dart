@@ -136,17 +136,20 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     }
 
     // Pass the prayer names to helper
-    return Column(
-      children: [
-        _buildNextPrayerCard(),
-        const SizedBox(height: 16),
-        _buildPrayerItem('Fajr', _prayerTimes!.fajr),
-        _buildPrayerItem('Sunrise', _prayerTimes!.sunrise, isOptional: true),
-        _buildPrayerItem('Dhuhr', _prayerTimes!.dhuhr),
-        _buildPrayerItem('Asr', _prayerTimes!.asr),
-        _buildPrayerItem('Maghrib', _prayerTimes!.maghrib),
-        _buildPrayerItem('Isha', _prayerTimes!.isha),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      child: Column(
+        children: [
+          _buildNextPrayerCard(),
+          const SizedBox(height: 16),
+          _buildPrayerItem('Fajr', _prayerTimes!.fajr),
+          _buildPrayerItem('Sunrise', _prayerTimes!.sunrise, isOptional: true),
+          _buildPrayerItem('Dhuhr', _prayerTimes!.dhuhr),
+          _buildPrayerItem('Asr', _prayerTimes!.asr),
+          _buildPrayerItem('Maghrib', _prayerTimes!.maghrib),
+          _buildPrayerItem('Isha', _prayerTimes!.isha),
+        ],
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'prayer_service.dart';
 import 'ai_service.dart';
+import 'auth_service.dart';
 import 'quran_service.dart';
 import 'audio_service.dart';
 import 'notification_service.dart';
@@ -17,6 +18,7 @@ Future<void> setupServiceLocator() async {
   // Core services
   getIt.registerLazySingleton<PrayerService>(() => PrayerService());
   getIt.registerLazySingleton<QuranService>(() => QuranService());
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
   getIt.registerLazySingleton<AIService>(() => AIService());
   getIt.registerLazySingleton<AudioService>(() => AudioService());
   getIt.registerLazySingleton<NotificationService>(() => NotificationService());
@@ -30,6 +32,7 @@ Future<void> setupServiceLocator() async {
   await getIt<SettingsService>().initialize();
   await getIt<NotificationService>().initialize();
   await getIt<PremiumService>().initialize();
+  await getIt<AuthService>().initialize();
   
   // Configure AI Service
   // Pass keys via --dart-define=AWS_ACCESS_KEY=... or --dart-define=BEDROCK_API_KEY=...

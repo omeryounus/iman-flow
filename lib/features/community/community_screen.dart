@@ -18,17 +18,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       child: Column(
         children: [
           Row(
             children: [
               const Expanded(child: TopBar(title: "Community", subtitle: "Connect with the Ummah")),
-              IconButton(
-                onPressed: _toggleWomenMode,
-                icon: Icon(_womenModeEnabled ? Icons.female : Icons.female_outlined, color: _womenModeEnabled ? Colors.pinkAccent : Colors.white60),
-                tooltip: "Women Mode",
+              Material(
+                color: Colors.transparent,
+                child: IconButton(
+                  onPressed: _toggleWomenMode,
+                  icon: Icon(_womenModeEnabled ? Icons.female : Icons.female_outlined, color: _womenModeEnabled ? Colors.pinkAccent : Colors.white60),
+                  tooltip: "Women Mode",
+                ),
               ),
             ],
           ),
@@ -49,9 +52,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
           const SizedBox(height: 16),
 
           // Content
-          EnterAnim(
-            key: ValueKey(_selectedIndex),
-            child: _buildContent(),
+          Expanded(
+            child: EnterAnim(
+              key: ValueKey(_selectedIndex),
+              child: _buildContent(),
+            ),
           ),
         ],
       ),
