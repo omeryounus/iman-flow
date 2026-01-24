@@ -182,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: ImanFlowTheme.bgMid,
             backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
             child: user.photoURL == null
-                ? Text((profile.displayName ?? 'U')[0].toUpperCase(), style: const TextStyle(fontSize: 32, color: ImanFlowTheme.gold))
+                ? Text(displayName[0].toUpperCase(), style: const TextStyle(fontSize: 32, color: ImanFlowTheme.gold))
                 : null,
           ),
         ),
