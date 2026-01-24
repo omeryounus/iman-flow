@@ -132,6 +132,34 @@ lib/
 - **AI**: Groq API
 - **Audio**: just_audio
 
+## Deployment
+ 
+To build the app for the Play Store or App Store, you must pass the API keys during the build command, just like in development.
+
+### Android (Play Store)
+Run the following command to generate an App Bundle (`.aab`):
+
+```bash
+flutter build appbundle \
+  --dart-define=BEDROCK_API_KEY=your_actual_key \
+  --dart-define=AWS_ACCESS_KEY=your_access_key \
+  --dart-define=AWS_SECRET_KEY=your_secret_key \
+  --dart-define=AWS_REGION=us-east-1
+```
+
+### iOS (App Store)
+Run the following to generate an IPA (requires a Mac with Xcode):
+
+```bash
+flutter build ipa \
+  --dart-define=BEDROCK_API_KEY=your_actual_key \
+  --dart-define=AWS_ACCESS_KEY=your_access_key \
+  --dart-define=AWS_SECRET_KEY=your_secret_key \
+  --dart-define=AWS_REGION=us-east-1
+```
+
+**Note:** For automated deployments (CI/CD), add these keys as "Secrets" in your CI environment (e.g., GitHub Actions Secrets) and reference them in your build script.
+
 ## License
 
 MIT License - See LICENSE file for details.

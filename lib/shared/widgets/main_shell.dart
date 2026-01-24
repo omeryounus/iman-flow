@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'glass_widgets.dart';
+import 'premium_background.dart';
 import '../../app/theme.dart';
 
 /// Main Shell with Bottom Navigation Bar
@@ -41,67 +43,67 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+    return Stack(
+      children: [
+        const PremiumBackgroundWithParticles(),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(child: child),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Glass(
+                radius: 22,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  children: [
+                    NavItem(
+                      active: selectedIndex == 0,
+                      icon: Icons.home_rounded,
+                      label: 'Home',
+                      onTap: () => _onItemTapped(context, 0),
+                    ),
+                    NavItem(
+                      active: selectedIndex == 1,
+                      icon: Icons.access_time_rounded,
+                      label: 'Prayer',
+                      onTap: () => _onItemTapped(context, 1),
+                    ),
+                    NavItem(
+                      active: selectedIndex == 2,
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'Quran AI',
+                      onTap: () => _onItemTapped(context, 2),
+                    ),
+                    NavItem(
+                      active: selectedIndex == 3,
+                      icon: Icons.favorite_rounded, // Devotionals
+                      label: 'Devotionals',
+                      onTap: () => _onItemTapped(context, 3),
+                    ),
+                    NavItem(
+                      active: selectedIndex == 4,
+                      icon: Icons.people_rounded, // Community
+                      label: 'Community',
+                      onTap: () => _onItemTapped(context, 4),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
+          // Preserving the FAB for AI Chat if desired, but styling it to match
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => context.push('/ai-chat'),
+            tooltip: 'Ask AI',
+            backgroundColor: ImanFlowTheme.gold,
+            foregroundColor: Colors.black,
+            child: const Icon(Icons.auto_awesome),
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          onTap: (index) => _onItemTapped(context, index),
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: isDark 
-              ? ImanFlowTheme.primaryGreenLight 
-              : ImanFlowTheme.primaryGreen,
-          unselectedItemColor: isDark 
-              ? ImanFlowTheme.textSecondaryDark 
-              : ImanFlowTheme.textSecondaryLight,
-          selectedFontSize: 12,
-          unselectedFontSize: 10,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.access_time_outlined),
-              activeIcon: Icon(Icons.access_time_filled),
-              label: 'Prayer',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book),
-              label: 'Quran & AI',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_outline),
-              activeIcon: Icon(Icons.favorite),
-              label: 'Devotionals',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              activeIcon: Icon(Icons.people),
-              label: 'Community',
-            ),
-          ],
-        ),
-      ),
-      // Floating Action Button for quick AI access
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/ai-chat'),
-        tooltip: 'Ask AI',
-        child: const Icon(Icons.auto_awesome),
-      ),
+      ],
     );
   }
 }

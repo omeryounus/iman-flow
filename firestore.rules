@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Daily Content (Verses) - Publicly Readable
+    match /daily_content/{document} {
+      allow read: if true;
+      allow write: if false; // Admin only
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

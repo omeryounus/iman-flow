@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
+import '../../../shared/widgets/glass_widgets.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/audio_service.dart';
 
@@ -36,7 +37,7 @@ class _DuaSectionState extends State<DuaSection> {
           // Dua List
           Text(
             _getCategoryTitle(),
-            style: Theme.of(context).textTheme.titleLarge,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 12),
           
@@ -51,13 +52,13 @@ class _DuaSectionState extends State<DuaSection> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildCategoryChip('morning', 'Morning', Icons.wb_twilight),
+          _buildCategoryChip('morning', 'Morning', Icons.wb_twilight_rounded),
           const SizedBox(width: 8),
-          _buildCategoryChip('evening', 'Evening', Icons.nights_stay_outlined),
+          _buildCategoryChip('evening', 'Evening', Icons.nights_stay_rounded),
           const SizedBox(width: 8),
-          _buildCategoryChip('sleep', 'Sleep', Icons.bedtime_outlined),
+          _buildCategoryChip('sleep', 'Sleep', Icons.bedtime_rounded),
           const SizedBox(width: 8),
-          _buildCategoryChip('general', 'General', Icons.auto_awesome),
+          _buildCategoryChip('general', 'General', Icons.auto_awesome_rounded),
         ],
       ),
     );
@@ -66,51 +67,38 @@ class _DuaSectionState extends State<DuaSection> {
   Widget _buildCategoryChip(String category, String label, IconData icon) {
     final isSelected = _selectedCategory == category;
     
-    return FilterChip(
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedCategory = category;
-        });
-      },
-      avatar: Icon(
-        icon,
-        size: 18,
-        color: isSelected ? Colors.white : ImanFlowTheme.primaryGreen,
-      ),
-      label: Text(label),
-      backgroundColor: Colors.transparent,
-      selectedColor: ImanFlowTheme.primaryGreen,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
-      ),
-      side: BorderSide(
-        color: isSelected ? ImanFlowTheme.primaryGreen : Colors.grey.shade300,
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = category),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? ImanFlowTheme.gold : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? ImanFlowTheme.gold : Colors.white.withOpacity(0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: isSelected ? Colors.black : Colors.white70),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.black : Colors.white,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFeaturedDua() {
-    return Container(
+    return Glass(
+      radius: 20,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ImanFlowTheme.primaryGreen,
-            ImanFlowTheme.accentTurquoise,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: ImanFlowTheme.primaryGreen.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -119,23 +107,24 @@ class _DuaSectionState extends State<DuaSection> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: ImanFlowTheme.gold.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.star,
-                  color: Colors.white,
+                  color: ImanFlowTheme.gold,
                 ),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Ayatul Kursi',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
                   Text(
@@ -165,8 +154,8 @@ class _DuaSectionState extends State<DuaSection> {
                     // Play Ayatul Kursi
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: ImanFlowTheme.primaryGreen,
+                    backgroundColor: ImanFlowTheme.gold,
+                    foregroundColor: Colors.black,
                   ),
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Listen'),
@@ -189,29 +178,20 @@ class _DuaSectionState extends State<DuaSection> {
 
   String _getCategoryTitle() {
     switch (_selectedCategory) {
-      case 'morning':
-        return '🌅 Morning Adhkar';
-      case 'evening':
-        return '🌙 Evening Adhkar';
-      case 'sleep':
-        return '😴 Before Sleep';
-      case 'general':
-        return '✨ Daily Duas';
-      default:
-        return 'Duas';
+      case 'morning': return '🌅 Morning Adhkar';
+      case 'evening': return '🌙 Evening Adhkar';
+      case 'sleep': return '😴 Before Sleep';
+      case 'general': return '✨ Daily Duas';
+      default: return 'Duas';
     }
   }
 
   List<DuaAudio> _getDuasForCategory() {
     switch (_selectedCategory) {
-      case 'morning':
-        return DuaAudio.morningDuas;
-      case 'evening':
-        return DuaAudio.eveningDuas;
-      case 'sleep':
-        return DuaAudio.sleepDuas;
-      default:
-        return [...DuaAudio.morningDuas, ...DuaAudio.eveningDuas];
+      case 'morning': return DuaAudio.morningDuas;
+      case 'evening': return DuaAudio.eveningDuas;
+      case 'sleep': return DuaAudio.sleepDuas;
+      default: return [...DuaAudio.morningDuas, ...DuaAudio.eveningDuas];
     }
   }
 
@@ -221,23 +201,17 @@ class _DuaSectionState extends State<DuaSection> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          width: 56,
-          height: 56,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
-            color: ImanFlowTheme.primaryGreen.withOpacity(0.1),
+            color: ImanFlowTheme.gold.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Stack(
@@ -245,24 +219,17 @@ class _DuaSectionState extends State<DuaSection> {
             children: [
               Icon(
                 isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: ImanFlowTheme.primaryGreen,
-                size: 32,
+                color: ImanFlowTheme.gold,
+                size: 30,
               ),
               if (dua.isPremium)
-                Positioned(
+                const Positioned(
                   top: 2,
                   right: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: ImanFlowTheme.accentGold,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.star,
-                      size: 10,
-                      color: Colors.white,
-                    ),
+                  child: Icon(
+                    Icons.star,
+                    size: 10,
+                    color: ImanFlowTheme.gold,
                   ),
                 ),
             ],
@@ -270,7 +237,7 @@ class _DuaSectionState extends State<DuaSection> {
         ),
         title: Text(
           dua.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,7 +249,7 @@ class _DuaSectionState extends State<DuaSection> {
             const SizedBox(height: 4),
             Text(
               _formatDuration(dua.duration),
-              style: Theme.of(context).textTheme.bodySmall,
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
             ),
           ],
         ),
@@ -293,7 +260,6 @@ class _DuaSectionState extends State<DuaSection> {
               setState(() => _playingDuaId = null);
             } else {
               if (dua.isPremium) {
-                // Show premium dialog
                 _showPremiumDialog();
               } else {
                 await _audioService.playAsset(dua.audioUrl);
@@ -303,12 +269,9 @@ class _DuaSectionState extends State<DuaSection> {
           },
           icon: Icon(
             isPlaying ? Icons.stop_circle_outlined : Icons.headphones,
-            color: ImanFlowTheme.primaryGreen,
+            color: ImanFlowTheme.gold,
           ),
         ),
-        onTap: () {
-          // Open dua details
-        },
       ),
     );
   }
@@ -323,26 +286,29 @@ class _DuaSectionState extends State<DuaSection> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        backgroundColor: ImanFlowTheme.bgMid,
+        title: const Row(
           children: [
-            Icon(Icons.star, color: ImanFlowTheme.accentGold),
-            const SizedBox(width: 8),
-            const Text('Premium Content'),
+            Icon(Icons.star, color: ImanFlowTheme.gold),
+            SizedBox(width: 8),
+            Text('Premium Content', style: TextStyle(color: Colors.white)),
           ],
         ),
         content: const Text(
           'This audio is available with Iman Flow Premium. Unlock ad-free experience, offline audio, and more!',
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Not Now'),
+            child: const Text('Not Now', style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               // Navigate to premium screen
             },
+            style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black),
             child: const Text('Go Premium'),
           ),
         ],

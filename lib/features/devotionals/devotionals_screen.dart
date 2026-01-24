@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/glass_widgets.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/services/streak_service.dart';
 import 'widgets/daily_hadith_card.dart';
@@ -15,163 +15,117 @@ class DevotionalsScreen extends StatefulWidget {
   State<DevotionalsScreen> createState() => _DevotionalsScreenState();
 }
 
-class _DevotionalsScreenState extends State<DevotionalsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _DevotionalsScreenState extends State<DevotionalsScreen> {
+  int _selectedIndex = 0;
   final StreakService _streakService = getIt<StreakService>();
   StreakData? _streakData;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _loadStreaks();
   }
 
   Future<void> _loadStreaks() async {
     final streaks = await _streakService.getAllStreaks();
-    setState(() => _streakData = streaks);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+    if (mounted) setState(() => _streakData = streaks);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
+      child: Column(
+        children: [
+          const TopBar(title: "Dhikr & Inspiration", subtitle: "Connect with Allah"),
+          const SizedBox(height: 14),
 
-    return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              expandedHeight: 180,
-              floating: false,
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                centerTitle: true,
-                titlePadding: const EdgeInsets.only(bottom: 60),
-                title: const Text(
-                  'Devotionals',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: isDark
-                          ? [
-                              ImanFlowTheme.accentTurquoise.withOpacity(0.8),
-                              ImanFlowTheme.primaryGreenDark,
-                            ]
-                          : [
-                              ImanFlowTheme.primaryGreenLight,
-                              ImanFlowTheme.primaryGreen,
-                            ],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 70),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Streak Badges
-                          if (_streakData != null)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildStreakBadge(
-                                  '🔥',
-                                  '${_streakData!.prayerStreak}',
-                                  'Prayer',
-                                ),
-                                const SizedBox(width: 16),
-                                _buildStreakBadge(
-                                  '📖',
-                                  '${_streakData!.quranStreak}',
-                                  'Quran',
-                                ),
-                                const SizedBox(width: 16),
-                                _buildStreakBadge(
-                                  '📿',
-                                  '${_streakData!.dhikrStreak}',
-                                  'Dhikr',
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              bottom: TabBar(
-                controller: _tabController,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(icon: Icon(Icons.format_quote), text: 'Hadith'),
-                  Tab(icon: Icon(Icons.loop), text: 'Dhikr'),
-                  Tab(icon: Icon(Icons.volunteer_activism), text: 'Dua Wall'),
-                ],
-              ),
+          // Streaks
+          if (_streakData != null)
+            Row(
+              children: [
+                Expanded(child: _streakBadge('Prayer', '${_streakData!.prayerStreak}', '🔥')),
+                const SizedBox(width: 8),
+                Expanded(child: _streakBadge('Quran', '${_streakData!.quranStreak}', '📖')),
+                const SizedBox(width: 8),
+                Expanded(child: _streakBadge('Dhikr', '${_streakData!.dhikrStreak}', '📿')),
+              ],
             ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            DailyHadithCard(onRefresh: _loadStreaks),
-            DhikrCounter(onComplete: _loadStreaks),
-            const DuaWall(),
-          ],
-        ),
+          const SizedBox(height: 14),
+
+          // Custom Tabs
+          Glass(
+            radius: 99,
+            padding: const EdgeInsets.all(6),
+            child: Row(
+              children: [
+                Expanded(child: _TabPill(label: "Hadith", icon: Icons.format_quote_rounded, selected: _selectedIndex == 0, onTap: () => setState(() => _selectedIndex = 0))),
+                Expanded(child: _TabPill(label: "Dhikr", icon: Icons.loop_rounded, selected: _selectedIndex == 1, onTap: () => setState(() => _selectedIndex = 1))),
+                Expanded(child: _TabPill(label: "Duas", icon: Icons.volunteer_activism_rounded, selected: _selectedIndex == 2, onTap: () => setState(() => _selectedIndex = 2))),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Content
+          EnterAnim(
+            key: ValueKey(_selectedIndex),
+            child: _buildContent(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStreakBadge(String emoji, String count, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
+  Widget _buildContent() {
+    switch (_selectedIndex) {
+      case 0: return DailyHadithCard(onRefresh: _loadStreaks);
+      case 1: return DhikrCounter(onComplete: _loadStreaks);
+      case 2: return const DuaWall();
+      default: return DailyHadithCard(onRefresh: _loadStreaks);
+    }
+  }
+
+  Widget _streakBadge(String label, String count, String emoji) {
+    return Glass(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
-              Text(
-                count,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 10,
-            ),
-          ),
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          Text(count, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(label, style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.6))),
         ],
+      ),
+    );
+  }
+}
+
+class _TabPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TabPill({required this.label, required this.icon, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(99),
+          color: selected ? ImanFlowTheme.gold : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: selected ? Colors.black : Colors.white60),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: selected ? Colors.black : Colors.white60)),
+          ],
+        ),
       ),
     );
   }

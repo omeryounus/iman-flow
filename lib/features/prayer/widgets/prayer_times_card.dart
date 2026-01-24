@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
+import 'dart:ui';
 import '../../../app/theme.dart';
+import '../../../shared/widgets/glass_widgets.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/prayer_service.dart';
 import '../../../core/services/streak_service.dart';
@@ -42,34 +44,42 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     try {
       final times = await _prayerService.getPrayerTimes();
       final timeUntil = await _prayerService.getTimeUntilNextPrayer();
-      setState(() {
-        _prayerTimes = times;
-        _timeUntilNext = timeUntil;
-        _isLoading = false;
-      });
-      _startCountdown();
+      if (mounted) {
+        setState(() {
+          _prayerTimes = times;
+          _timeUntilNext = timeUntil;
+          _isLoading = false;
+        });
+        _startCountdown();
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _loadCompletedPrayers() async {
     final prayers = await _streakService.getTodayPrayers();
-    setState(() {
-      _completedPrayers = prayers;
-    });
+    if (mounted) {
+      setState(() {
+        _completedPrayers = prayers;
+      });
+    }
   }
 
   void _startCountdown() {
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeUntilNext.inSeconds > 0) {
-        setState(() {
-          _timeUntilNext = _timeUntilNext - const Duration(seconds: 1);
-        });
+        if (mounted) {
+          setState(() {
+            _timeUntilNext = _timeUntilNext - const Duration(seconds: 1);
+          });
+        }
       } else {
         _loadPrayerTimes(); // Refresh when prayer time arrives
       }
@@ -82,8 +92,8 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$prayerName prayer marked as complete! 🤲'),
-          backgroundColor: ImanFlowTheme.success,
+          content: Text('$prayerName prayer marked as complete!'),
+          backgroundColor: ImanFlowTheme.gold,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -93,7 +103,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
     }
 
     if (_error != null) {
@@ -103,21 +113,19 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.location_off, size: 64, color: Colors.grey),
+              const Icon(Icons.location_off, size: 64, color: Colors.white54),
               const SizedBox(height: 16),
-              Text(
-                'Location Required',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              const Text('Location Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Please enable location services to calculate accurate prayer times.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _loadPrayerTimes,
+                style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
               ),
@@ -127,26 +135,18 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
       );
     }
 
-    final prayers = [
-      _buildPrayerItem('Fajr', _prayerTimes!.fajr, ImanFlowTheme.fajrColor),
-      _buildPrayerItem('Sunrise', _prayerTimes!.sunrise, Colors.orange, isOptional: true),
-      _buildPrayerItem('Dhuhr', _prayerTimes!.dhuhr, ImanFlowTheme.dhuhrColor),
-      _buildPrayerItem('Asr', _prayerTimes!.asr, ImanFlowTheme.asrColor),
-      _buildPrayerItem('Maghrib', _prayerTimes!.maghrib, ImanFlowTheme.maghribColor),
-      _buildPrayerItem('Isha', _prayerTimes!.isha, ImanFlowTheme.ishaColor),
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Next Prayer Countdown
-          _buildNextPrayerCard(),
-          const SizedBox(height: 16),
-          // All Prayer Times
-          ...prayers,
-        ],
-      ),
+    // Pass the prayer names to helper
+    return Column(
+      children: [
+        _buildNextPrayerCard(),
+        const SizedBox(height: 16),
+        _buildPrayerItem('Fajr', _prayerTimes!.fajr),
+        _buildPrayerItem('Sunrise', _prayerTimes!.sunrise, isOptional: true),
+        _buildPrayerItem('Dhuhr', _prayerTimes!.dhuhr),
+        _buildPrayerItem('Asr', _prayerTimes!.asr),
+        _buildPrayerItem('Maghrib', _prayerTimes!.maghrib),
+        _buildPrayerItem('Isha', _prayerTimes!.isha),
+      ],
     );
   }
 
@@ -158,31 +158,17 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     final minutes = (_timeUntilNext.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (_timeUntilNext.inSeconds % 60).toString().padLeft(2, '0');
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            ImanFlowTheme.primaryGreen,
-            ImanFlowTheme.accentTurquoise,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: ImanFlowTheme.primaryGreen.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return Glass(
+      radius: 28,
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           Text(
             'Next Prayer',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.6),
               fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
@@ -190,22 +176,22 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
             nextPrayerName,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildTimeUnit(hours.toString().padLeft(2, '0'), 'HRS'),
-              const SizedBox(width: 8),
-              Text(':', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 24)),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
+              _buildColon(),
+              const SizedBox(width: 12),
               _buildTimeUnit(minutes, 'MIN'),
-              const SizedBox(width: 8),
-              Text(':', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 24)),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
+              _buildColon(),
+              const SizedBox(width: 12),
               _buildTimeUnit(seconds, 'SEC'),
             ],
           ),
@@ -214,141 +200,122 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     );
   }
 
+  Widget _buildColon() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(':', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 24, fontWeight: FontWeight.bold)),
+    );
+  }
+
   Widget _buildTimeUnit(String value, String label) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
+            color: Colors.black.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
+              color: ImanFlowTheme.gold,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withOpacity(0.5),
             fontSize: 10,
+            fontWeight: FontWeight.bold
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPrayerItem(String name, DateTime time, Color color, {bool isOptional = false}) {
+  Widget _buildPrayerItem(String name, DateTime time, {bool isOptional = false}) {
     final isPassed = time.isBefore(DateTime.now());
     final isCompleted = _completedPrayers.contains(name);
     final isNext = _prayerService.getPrayerName(_prayerTimes!.nextPrayer()) == name;
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: isNext
-            ? Border.all(color: color, width: 2)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isNext ? ImanFlowTheme.gold.withOpacity(0.15) : Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isNext ? ImanFlowTheme.gold.withOpacity(0.4) : Colors.white.withOpacity(0.08),
+        ),
       ),
       child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            _getPrayerIcon(name),
-            color: color,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Icon(
+          _getPrayerIcon(name),
+          color: isNext ? ImanFlowTheme.gold : Colors.white.withOpacity(0.7),
+        ),
+        title: Text(
+          name,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isPassed && !isCompleted && !isOptional
+                ? Colors.white.withOpacity(0.5)
+                : Colors.white,
           ),
         ),
-        title: Row(
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
+             Text(
+              _prayerService.formatPrayerTime(time),
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isPassed && !isCompleted
-                    ? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5)
-                    : null,
+                color: isNext ? ImanFlowTheme.gold : Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.bold,
               ),
             ),
-            if (isNext)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  'NEXT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+            if (!isOptional) ...[
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: isCompleted ? null : () => _markPrayerComplete(name),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isCompleted ? ImanFlowTheme.gold : Colors.white.withOpacity(0.1),
+                    border: Border.all(
+                      color: isCompleted ? ImanFlowTheme.gold : Colors.white.withOpacity(0.3),
+                    )
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    size: 16,
+                    color: isCompleted ? Colors.black : Colors.transparent,
                   ),
                 ),
-              ),
+              )
+            ]
           ],
         ),
-        subtitle: Text(
-          _prayerService.formatPrayerTime(time),
-          style: TextStyle(
-            color: isPassed && !isCompleted ? Colors.grey : color,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        trailing: isOptional
-            ? null
-            : IconButton(
-                onPressed: isCompleted
-                    ? null
-                    : () => _markPrayerComplete(name),
-                icon: Icon(
-                  isCompleted
-                      ? Icons.check_circle
-                      : Icons.check_circle_outline,
-                  color: isCompleted ? ImanFlowTheme.success : Colors.grey,
-                ),
-              ),
       ),
     );
   }
 
   IconData _getPrayerIcon(String name) {
     switch (name) {
-      case 'Fajr':
-        return Icons.wb_twilight;
-      case 'Sunrise':
-        return Icons.wb_sunny_outlined;
-      case 'Dhuhr':
-        return Icons.wb_sunny;
-      case 'Asr':
-        return Icons.cloud;
-      case 'Maghrib':
-        return Icons.nights_stay_outlined;
-      case 'Isha':
-        return Icons.nights_stay;
-      default:
-        return Icons.access_time;
+      case 'Fajr': return Icons.wb_twilight_rounded;
+      case 'Sunrise': return Icons.wb_sunny_outlined;
+      case 'Dhuhr': return Icons.wb_sunny_rounded;
+      case 'Asr': return Icons.cloud_outlined;
+      case 'Maghrib': return Icons.nights_stay_outlined;
+      case 'Isha': return Icons.nights_stay_rounded;
+      default: return Icons.access_time_rounded;
     }
   }
 }

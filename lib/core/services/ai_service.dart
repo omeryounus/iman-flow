@@ -15,7 +15,9 @@ class AIService {
   // String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
   String _modelId = 'amazon.nova-lite-v1:0';
   
-  bool get _isConfigured => (_accessKeyId != null && _secretAccessKey != null) || (_apiKey != null && _apiKey!.isNotEmpty);
+  bool get _isConfigured => 
+      (_accessKeyId != null && _accessKeyId!.isNotEmpty && _secretAccessKey != null && _secretAccessKey!.isNotEmpty) || 
+      (_apiKey != null && _apiKey!.isNotEmpty);
 
   /// System prompt for scholar-validated responses
   static const String _systemPrompt = '''
@@ -52,7 +54,9 @@ RESPONSE FORMAT:
   /// Send a message to AWS Bedrock
   Future<String> sendMessage(String message) async {
     if (!_isConfigured) {
-      return "AI Service not configured. Please check your settings.";
+      // Demo Mode Response
+      await Future.delayed(const Duration(seconds: 1));
+      return "✨ **Demo Mode**\n\nAI settings are not configured. In a real environment, I would answer: \"$message\" using authenticated Islamic knowledge.\n\nTo enable real AI:\n1. Get AWS Access Keys or Bedrock API Key\n2. Add them to your build configuration.";
     }
 
     try {
@@ -72,9 +76,9 @@ RESPONSE FORMAT:
           }
         ],
         "inferenceConfig": {
-          "maxNewTokens": 1000,
+          "max_new_tokens": 1000,
           "temperature": 0.7,
-          "topP": 0.9
+          "top_p": 0.9
         }
       });
 
@@ -138,6 +142,10 @@ RESPONSE FORMAT:
       if (e is DioException) {
          if (e.response != null) {
            print('Bedrock Error Body: ${e.response?.data}');
+           // If unauthorized, fallback to demo message instead of crashing UI
+           if (e.response?.statusCode == 403) {
+             return "⚠️ **Access Denied**\n\nThe security token is invalid or expired. Please check your AWS credentials.\n\n(Falling back to Demo Mode functionality in UI)";
+           }
            return 'AWS Bedrock Error (${e.response?.statusCode}): ${e.response?.data}';
          }
          return 'Error connecting to AWS Bedrock: ${e.message}';

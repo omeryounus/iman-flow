@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_qiblah/flutter_qiblah.dart';
 import 'dart:math' as math;
 import '../../../app/theme.dart';
+import '../../../shared/widgets/glass_widgets.dart';
 
 /// Qibla Compass Widget
 class QiblaCompass extends StatefulWidget {
@@ -36,7 +37,7 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
       future: _deviceSupport,
       builder: (context, AsyncSnapshot<bool?> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
         }
         
         if (snapshot.hasError || snapshot.data == false) {
@@ -50,31 +51,25 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
 
   Widget _buildUnsupportedView() {
     return Center(
-      child: Padding(
+      child: Glass(
+        radius: 22,
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.sensors_off,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.sensors_off, size: 64, color: Colors.white54),
             const SizedBox(height: 16),
-            Text(
-              'Compass Not Available',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            const Text('Compass Not Available', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text(
               'Your device may not have compass sensors. Try using AR Qibla instead.',
               textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () {
-                // Navigate to AR Qibla
-              },
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black),
               icon: const Icon(Icons.view_in_ar),
               label: const Text('Try AR Qibla'),
             ),
@@ -89,16 +84,7 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
       stream: FlutterQiblah.qiblahStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Calibrating compass...'),
-              ],
-            ),
-          );
+          return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
         }
 
         if (!snapshot.hasData) {
@@ -121,13 +107,13 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      ImanFlowTheme.primaryGreenLight.withOpacity(0.1),
+                      ImanFlowTheme.emeraldGlow.withOpacity(0.1),
                       Colors.transparent,
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: ImanFlowTheme.primaryGreen.withOpacity(0.2),
+                      color: ImanFlowTheme.emeraldGlow.withOpacity(0.1),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -136,14 +122,12 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Compass Rose / Background
+                    // Compass Rose
                     Transform.rotate(
                       angle: -(qiblahDirection.direction * (math.pi / 180)),
                       child: CustomPaint(
                         size: const Size(260, 260),
-                        painter: CompassPainter(
-                          isDark: Theme.of(context).brightness == Brightness.dark,
-                        ),
+                        painter: CompassPainter(),
                       ),
                     ),
                     
@@ -158,15 +142,11 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                           children: [
                             Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: ImanFlowTheme.accentGold,
+                              decoration: const BoxDecoration(
+                                color: ImanFlowTheme.gold,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.mosque,
-                                color: Colors.white,
-                                size: 28,
-                              ),
+                              child: const Icon(Icons.mosque, color: Colors.black, size: 28),
                             ),
                             Container(
                               width: 4,
@@ -176,8 +156,8 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    ImanFlowTheme.accentGold,
-                                    ImanFlowTheme.accentGold.withOpacity(0.2),
+                                    ImanFlowTheme.gold,
+                                    ImanFlowTheme.gold.withOpacity(0.2),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(2),
@@ -193,12 +173,12 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                       width: 20,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: ImanFlowTheme.primaryGreen,
+                        color: ImanFlowTheme.bgMid,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
+                        border: Border.all(color: ImanFlowTheme.gold, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withOpacity(0.4),
                             blurRadius: 8,
                           ),
                         ],
@@ -211,18 +191,9 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
               const SizedBox(height: 32),
               
               // Direction Info
-              Container(
+              Glass(
+                radius: 16,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -234,7 +205,7 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
                     Container(
                       width: 1,
                       height: 40,
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.white.withOpacity(0.1),
                     ),
                     _buildDirectionInfo(
                       'Compass',
@@ -251,25 +222,20 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: ImanFlowTheme.accentGold.withOpacity(0.1),
+                  color: ImanFlowTheme.gold.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: ImanFlowTheme.accentGold.withOpacity(0.3),
+                    color: ImanFlowTheme.gold.withOpacity(0.3),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: ImanFlowTheme.accentGold,
-                    ),
+                    const Icon(Icons.info_outline, color: ImanFlowTheme.gold),
                     const SizedBox(width: 12),
-                    Expanded(
+                    const Expanded(
                       child: Text(
                         'Point your phone in the direction of the golden arrow to face the Kaaba.',
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color,
-                        ),
+                        style: TextStyle(color: Colors.white70),
                       ),
                     ),
                   ],
@@ -280,10 +246,10 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
               
               // AR Qibla Button
               OutlinedButton.icon(
-                onPressed: () {
-                  // Navigate to AR Qibla view
-                },
+                onPressed: () {},
                 style: OutlinedButton.styleFrom(
+                  foregroundColor: ImanFlowTheme.gold,
+                  side: const BorderSide(color: ImanFlowTheme.gold),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
                 icon: const Icon(Icons.view_in_ar),
@@ -299,21 +265,18 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
   Widget _buildDirectionInfo(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: ImanFlowTheme.primaryGreen),
+        Icon(icon, color: ImanFlowTheme.gold),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodySmall?.color,
-            fontSize: 12,
-          ),
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: ImanFlowTheme.primaryGreen,
+            color: Colors.white,
           ),
         ),
       ],
@@ -323,10 +286,6 @@ class _QiblaCompassState extends State<QiblaCompass> with SingleTickerProviderSt
 
 /// Custom Painter for Compass Rose
 class CompassPainter extends CustomPainter {
-  final bool isDark;
-
-  CompassPainter({this.isDark = false});
-
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -334,7 +293,7 @@ class CompassPainter extends CustomPainter {
 
     // Draw outer circle
     final outerPaint = Paint()
-      ..color = isDark ? Colors.grey[800]! : Colors.grey[300]!
+      ..color = Colors.white.withOpacity(0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawCircle(center, radius - 10, outerPaint);
@@ -354,8 +313,8 @@ class CompassPainter extends CustomPainter {
         text: directions[i],
         style: TextStyle(
           color: directions[i] == 'N'
-              ? ImanFlowTheme.error
-              : (isDark ? Colors.white70 : Colors.grey[700]),
+              ? Colors.redAccent
+              : Colors.white70,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -382,7 +341,7 @@ class CompassPainter extends CustomPainter {
       final y2 = center.dy + outerRadius * math.sin(angle);
 
       final tickPaint = Paint()
-        ..color = isDark ? Colors.white54 : Colors.grey[500]!
+        ..color = Colors.white.withOpacity(isCardinal ? 0.6 : 0.3)
         ..strokeWidth = isCardinal ? 2 : (isMajor ? 1.5 : 0.5);
 
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), tickPaint);

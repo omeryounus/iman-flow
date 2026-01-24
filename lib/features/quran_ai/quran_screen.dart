@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/glass_widgets.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/services/quran_service.dart';
 import 'widgets/surah_list.dart';
@@ -39,16 +40,20 @@ class _QuranScreenState extends State<QuranScreen> {
   Future<void> _loadSurahs() async {
     try {
       final surahs = await _quranService.getSurahs();
-      setState(() {
-        _surahs = surahs;
-        _filteredSurahs = surahs;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _surahs = surahs;
+          _filteredSurahs = surahs;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -69,308 +74,129 @@ class _QuranScreenState extends State<QuranScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const TopBar(title: "Quran Reader", subtitle: "Read & Understand"),
+          const SizedBox(height: 14),
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 180,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Quran'),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [
-                            ImanFlowTheme.primaryGreenDark,
-                            ImanFlowTheme.primaryGreen,
-                          ]
-                        : [
-                            ImanFlowTheme.primaryGreen,
-                            ImanFlowTheme.accentTurquoise,
-                          ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 30),
-                      Icon(
-                        Icons.menu_book,
-                        size: 40,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                        style: ArabicTextStyles.quranVerse(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          // Search
+          Glass(
+            radius: 18,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterSurahs,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search Surah...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                icon: Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
+                border: InputBorder.none,
+                filled: false,
+                suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(onPressed: () { _searchController.clear(); _filterSurahs(''); }, icon: const Icon(Icons.clear, color: Colors.white70))
+                  : null,
               ),
             ),
-            actions: [
-              IconButton(
-                onPressed: () => context.push('/ai-chat'),
-                icon: const Icon(Icons.auto_awesome),
-                tooltip: 'Ask AI about Quran',
-              ),
+          ),
+          const SizedBox(height: 14),
+
+          // Quick Actions Row
+          Row(
+            children: [
+              Expanded(child: _quickBtn("Random Verse", Icons.shuffle, () async {
+                 final verse = await _quranService.getRandomVerse();
+                 if (mounted) _showVerseDialog(verse);
+              })),
+              const SizedBox(width: 8),
+              Expanded(child: _quickBtn("Ask AI", Icons.auto_awesome, () => context.push('/ai-chat'))),
             ],
           ),
+          const SizedBox(height: 18),
 
-          // Search Bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _filterSurahs,
-                decoration: InputDecoration(
-                  hintText: 'Search Surah by name or number...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            _filterSurahs('');
-                          },
-                          icon: const Icon(Icons.clear),
-                        )
-                      : null,
-                ),
-              ),
-            ),
-          ),
+          Text("All Surahs (${_filteredSurahs.length})", 
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 12),
 
-          // Quick Actions
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickAction(
-                      'Random Verse',
-                      Icons.shuffle,
-                      () async {
-                        final verse = await _quranService.getRandomVerse();
-                        if (mounted) {
-                          _showVerseDialog(verse);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickAction(
-                      'Continue Reading',
-                      Icons.bookmark,
-                      () {
-                        // Load last read position
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickAction(
-                      'Ask AI',
-                      Icons.auto_awesome,
-                      () => context.push('/ai-chat'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // Surah List Header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Text(
-                    'All Surahs',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${_filteredSurahs.length} of 114',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-          // Surah List
           if (_isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold))
           else if (_error != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text('Failed to load Quran'),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _loadSurahs,
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            )
+            Center(child: Text("Error loading Surahs", style: TextStyle(color: Colors.red[300])))
           else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final surah = _filteredSurahs[index];
-                  return _buildSurahTile(surah);
-                },
-                childCount: _filteredSurahs.length,
-              ),
-            ),
+            _buildSurahList(),
         ],
       ),
     );
   }
 
-  Widget _buildQuickAction(String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
+  Widget _quickBtn(String label, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: Glass(
+        radius: 16,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: ImanFlowTheme.primaryGreen.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: ImanFlowTheme.primaryGreen),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: ImanFlowTheme.primaryGreen,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
+             Icon(icon, size: 18, color: ImanFlowTheme.gold),
+             const SizedBox(width: 8),
+             Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSurahTile(Surah surah) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: ImanFlowTheme.primaryGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Text(
-              '${surah.id}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: ImanFlowTheme.primaryGreen,
+  Widget _buildSurahList() {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: _filteredSurahs.length,
+      itemBuilder: (context, index) {
+        final surah = _filteredSurahs[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () {
+               setState(() => _selectedSurahId = surah.id);
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(builder: (context) => VerseReader(surah: surah)),
+               );
+            },
+            child: Glass(
+              radius: 18,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                   Container(
+                     width: 36, height: 36,
+                     decoration: BoxDecoration(
+                       shape: BoxShape.circle,
+                       color: ImanFlowTheme.gold.withOpacity(0.1),
+                       border: Border.all(color: ImanFlowTheme.gold.withOpacity(0.3)),
+                     ),
+                     child: Center(child: Text("${surah.id}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: ImanFlowTheme.gold))),
+                   ),
+                   const SizedBox(width: 14),
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                        Text(surah.nameSimple, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                        Text("${surah.versesCount} verses", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.5))),
+                     ],
+                   ),
+                   const Spacer(),
+                   Text(surah.nameArabic, style: ArabicTextStyles.quranVerse(fontSize: 20)),
+                ],
               ),
             ),
           ),
-        ),
-        title: Row(
-          children: [
-            Text(
-              surah.nameSimple,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const Spacer(),
-            Text(
-              surah.nameArabic,
-              style: ArabicTextStyles.quranVerse(fontSize: 18),
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Text(surah.nameTranslated),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: surah.revelationPlace == 'makkah'
-                    ? Colors.orange.withOpacity(0.1)
-                    : Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                surah.revelationPlace == 'makkah' ? 'Makki' : 'Madani',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: surah.revelationPlace == 'makkah'
-                      ? Colors.orange
-                      : Colors.blue,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${surah.versesCount} verses',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        onTap: () {
-          // Navigate to verse reader
-          setState(() => _selectedSurahId = surah.id);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerseReader(surah: surah),
-            ),
-          );
-        },
-      ),
+        );
+      },
     );
   }
 
@@ -378,41 +204,40 @@ class _QuranScreenState extends State<QuranScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Verse of the Day'),
+        backgroundColor: ImanFlowTheme.bgMid,
+        title: const Text('Verse of the Day', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               verse.textArabic,
-              style: ArabicTextStyles.quranVerse(
-                fontSize: 24,
-                height: 2,
-              ),
+              style: ArabicTextStyles.quranVerse(fontSize: 24, height: 2),
               textAlign: TextAlign.right,
             ),
             const SizedBox(height: 16),
             Text(
               verse.translation ?? '',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Text(
               verse.verseKey,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Close', style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(context);
               context.push('/ai-chat');
             },
+            style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black),
             icon: const Icon(Icons.auto_awesome),
             label: const Text('Ask AI'),
           ),

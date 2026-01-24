@@ -32,10 +32,11 @@ Future<void> setupServiceLocator() async {
   await getIt<PremiumService>().initialize();
   
   // Configure AI Service
-  // Pass keys via --dart-define=AWS_ACCESS_KEY=... or hardcode here for testing
+  // Pass keys via --dart-define=AWS_ACCESS_KEY=... or --dart-define=BEDROCK_API_KEY=...
   getIt<AIService>().configure(
-    accessKeyId: const String.fromEnvironment('AWS_ACCESS_KEY', defaultValue: 'YOUR_ACCESS_KEY'),
-    secretAccessKey: const String.fromEnvironment('AWS_SECRET_KEY', defaultValue: 'YOUR_SECRET_KEY'),
+    accessKeyId: const String.fromEnvironment('AWS_ACCESS_KEY', defaultValue: ''),
+    secretAccessKey: const String.fromEnvironment('AWS_SECRET_KEY', defaultValue: ''),
+    apiKey: const String.fromEnvironment('BEDROCK_API_KEY', defaultValue: ''),
     region: const String.fromEnvironment('AWS_REGION', defaultValue: 'us-east-1'),
   );
 }

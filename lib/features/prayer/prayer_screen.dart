@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
-import '../../core/services/service_locator.dart';
-import '../../core/services/prayer_service.dart';
+import '../../shared/widgets/glass_widgets.dart';
 import 'widgets/prayer_times_card.dart';
 import 'widgets/qibla_compass.dart';
 import 'widgets/dua_section.dart';
@@ -14,95 +13,82 @@ class PrayerScreen extends StatefulWidget {
   State<PrayerScreen> createState() => _PrayerScreenState();
 }
 
-class _PrayerScreenState extends State<PrayerScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final PrayerService _prayerService = getIt<PrayerService>();
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _PrayerScreenState extends State<PrayerScreen> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              expandedHeight: 200,
-              floating: false,
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                title: const Text('Prayer'),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDark
-                          ? [
-                              ImanFlowTheme.primaryGreenDark,
-                              ImanFlowTheme.primaryGreen,
-                            ]
-                          : [
-                              ImanFlowTheme.primaryGreen,
-                              ImanFlowTheme.primaryGreenLight,
-                            ],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40),
-                        Icon(
-                          Icons.mosque,
-                          size: 48,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Establish Prayer',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              bottom: TabBar(
-                controller: _tabController,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(icon: Icon(Icons.access_time), text: 'Times'),
-                  Tab(icon: Icon(Icons.explore), text: 'Qibla'),
-                  Tab(icon: Icon(Icons.headphones), text: 'Duas'),
-                ],
-              ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const TopBar(title: "Prayer Times", subtitle: "Your Location • Hijri Date"),
+          const SizedBox(height: 14),
+          
+          // Custom Tab Selector
+          Glass(
+            radius: 99,
+            padding: const EdgeInsets.all(6),
+            child: Row(
+              children: [
+                Expanded(child: _TabPill(label: "Times", icon: Icons.access_time_filled_rounded, selected: _selectedIndex == 0, onTap: () => setState(() => _selectedIndex = 0))),
+                const SizedBox(width: 6),
+                Expanded(child: _TabPill(label: "Qibla", icon: Icons.explore_rounded, selected: _selectedIndex == 1, onTap: () => setState(() => _selectedIndex = 1))),
+                const SizedBox(width: 6),
+                Expanded(child: _TabPill(label: "Duas", icon: Icons.headphones_rounded, selected: _selectedIndex == 2, onTap: () => setState(() => _selectedIndex = 2))),
+              ],
             ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            PrayerTimesCard(),
-            QiblaCompass(),
-            DuaSection(),
+          ),
+          const SizedBox(height: 16),
+
+          // Content
+          EnterAnim(
+            key: ValueKey(_selectedIndex),
+            child: _buildContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    switch (_selectedIndex) {
+      case 0: return const PrayerTimesCard();
+      case 1: return const QiblaCompass();
+      case 2: return const DuaSection();
+      default: return const PrayerTimesCard();
+    }
+  }
+}
+
+class _TabPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TabPill({required this.label, required this.icon, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(99),
+          color: selected ? ImanFlowTheme.gold : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: selected ? Colors.black : Colors.white.withOpacity(0.6)),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(
+              fontWeight: FontWeight.bold, 
+              fontSize: 13,
+              color: selected ? Colors.black : Colors.white.withOpacity(0.6)
+            )),
           ],
         ),
       ),
