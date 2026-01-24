@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:adhan/adhan.dart';
@@ -7,6 +8,7 @@ import 'prayer_service.dart';
 /// Notification Service for Prayer Times and Daily Reminders
 class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   
   /// Initialize notification service
   Future<void> initialize() async {
@@ -28,7 +30,35 @@ class NotificationService {
       settings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    // Setup FCM Foreground Listener
+    FirebaseMessaging.onMessage.listen(_handleRemoteMessage);
   }
+
+  Future<void> _handleRemoteMessage(RemoteMessage message) async {
+    print('NotificationService: Received foreground FCM message: ${message.data}');
+    // You can show a local notification here if needed when app is in foreground
+    if (message.notification != null) {
+      await showNow(
+        title: message.notification?.title ?? 'Notification',
+        body: message.notification?.body ?? '',
+        payload: 'remote_${message.messageId}',
+      );
+    }
+  }
+
+  /// Get FCM token for the device
+  Future<String?> getFcmToken() async {
+    try {
+      return await _fcm.getToken();
+    } catch (e) {
+      print('NotificationService: Error getting FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Stream of FCM token refreshes
+  Stream<String> get onTokenRefresh => _fcm.onTokenRefresh;
 
   void _onNotificationTapped(NotificationResponse response) {
     // Handle notification tap - navigate to appropriate screen

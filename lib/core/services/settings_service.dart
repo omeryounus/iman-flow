@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'service_locator.dart';
+import 'notification_service.dart';
+import '../../features/profile/services/user_service.dart';
 
 /// App theme mode
 enum AppThemeMode {
@@ -26,6 +29,7 @@ class UserSettings {
   final String? cityName;
   final String? timezone;
   final bool autoTimezone;
+  final bool prayerNotifications;
 
   const UserSettings({
     this.themeMode = AppThemeMode.system,
@@ -35,6 +39,7 @@ class UserSettings {
     this.cityName,
     this.timezone,
     this.autoTimezone = true,
+    this.prayerNotifications = false,
   });
 
   UserSettings copyWith({
@@ -45,6 +50,7 @@ class UserSettings {
     String? cityName,
     String? timezone,
     bool? autoTimezone,
+    bool? prayerNotifications,
   }) {
     return UserSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -54,6 +60,7 @@ class UserSettings {
       cityName: cityName ?? this.cityName,
       timezone: timezone ?? this.timezone,
       autoTimezone: autoTimezone ?? this.autoTimezone,
+      prayerNotifications: prayerNotifications ?? this.prayerNotifications,
     );
   }
 }
@@ -92,6 +99,7 @@ class SettingsService {
       cityName: _prefs!.getString('cityName'),
       timezone: _prefs!.getString('timezone'),
       autoTimezone: _prefs!.getBool('autoTimezone') ?? true,
+      prayerNotifications: _prefs!.getBool('prayerNotifications') ?? false,
     );
 
     _settingsController.add(_settings);
@@ -185,6 +193,26 @@ class SettingsService {
     await _prefs?.setString('timezone', timezone);
     await _prefs?.setBool('autoTimezone', auto);
     _settingsController.add(_settings);
+  }
+
+  /// Toggle prayer notifications
+  Future<void> setPrayerNotifications(bool enabled) async {
+    _settings = _settings.copyWith(prayerNotifications: enabled);
+    await _prefs?.setBool('prayerNotifications', enabled);
+    _settingsController.add(_settings);
+
+    if (enabled) {
+      // Sync to Firestore
+      final notificationService = getIt<NotificationService>();
+      final userService = getIt<UserService>();
+      
+      final token = await notificationService.getFcmToken();
+      await userService.syncPushNotificationData(
+        fcmToken: token,
+        latitude: _settings.latitude,
+        longitude: _settings.longitude,
+      );
+    }
   }
 
   /// Get ThemeMode for MaterialApp

@@ -36,36 +36,51 @@ class AuthService {
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      print('AuthService: Starting Google Sign-In flow (authenticate)...');
       // In 7.x, authenticate() returns the account directly
       final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
       
-      if (googleUser == null) return null;
+      if (googleUser == null) {
+        print('AuthService: Google Sign-In cancelled by user or failed');
+        return null;
+      }
+      print('AuthService: Google user authenticated: ${googleUser.email}');
 
       // Get ID Token for Firebase Authentication
+      print('AuthService: Retrieving tokens from Google authentication object...');
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
+      print('AuthService: idToken retrieved: ${idToken != null}');
 
       // For Access Token, in 7.x we use the authorizationClient
+      print('AuthService: Authorizing scopes (email, profile) for accessToken...');
       final authorization = await googleUser.authorizationClient.authorizeScopes(['email', 'profile']);
       final String? accessToken = authorization.accessToken;
+      print('AuthService: accessToken retrieved: ${accessToken != null}');
 
       if (idToken == null) {
-        print('AuthService: Error - Missing ID Token');
+        print('AuthService: Critical Error - idToken is null, cannot proceed to Firebase');
         return null;
       }
 
+      print('AuthService: Signing into Firebase with Google credentials...');
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: accessToken,
         idToken: idToken,
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
+      print('AuthService: Firebase login successful: ${userCredential.user?.uid}');
+
+      print('AuthService: Creating/Updating user profile in Firestore...');
       await _userService.createOrUpdateProfile(
         displayName: userCredential.user?.displayName,
       );
+      print('AuthService: Google Sign-In complete');
+      
       return userCredential;
     } catch (e) {
-      print('AuthService: Google sign in error: $e');
+      print('AuthService: Google Sign-In Exception: $e');
       return null;
     }
   }

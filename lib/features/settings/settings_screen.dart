@@ -7,6 +7,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/service_locator.dart';
 import '../profile/models/user_profile.dart';
 import '../profile/services/user_service.dart';
+import '../../core/services/notification_service.dart';
 
 /// Settings Screen - Theme, Location, Timezone options
 class SettingsScreen extends StatefulWidget {
@@ -61,6 +62,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildAccountSection(),
                           const SizedBox(height: 24),
 
+                          _buildSectionHeader('Notifications'),
+                          _buildNotificationSettings(settings),
+                          const SizedBox(height: 24),
+
                           _buildSectionHeader('Appearance'),
                           _buildThemeSelector(settings),
                           const SizedBox(height: 24),
@@ -91,6 +96,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: ImanFlowTheme.gold, fontSize: 16)),
+    );
+  }
+
+  Widget _buildNotificationSettings(UserSettings settings) {
+    return Glass(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: const Text('Prayer Times', style: TextStyle(color: Colors.white)),
+            subtitle: Text('Receive push notifications for daily prayers', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+            secondary: const Icon(Icons.notifications_active, color: ImanFlowTheme.gold),
+            value: settings.prayerNotifications,
+            activeColor: ImanFlowTheme.gold,
+            inactiveTrackColor: Colors.white10,
+            onChanged: (value) async {
+              if (value) {
+                // Request Permission
+                final granted = await getIt<NotificationService>().requestPermission();
+                if (!granted) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notification permission denied')),
+                    );
+                  }
+                  return;
+                }
+              }
+              _settingsService.setPrayerNotifications(value);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -291,44 +330,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: ImanFlowTheme.bgMid,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 8),
-            const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _authService.signInWithGoogle();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
-                icon: const Icon(Icons.login), // Add Google icon if you have it
-                label: const Text('Sign in with Google'),
-              ),
+      builder: (context) {
+        bool isLoggingIn = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> handleLogin(Future<void> Function() loginAction) async {
+              setModalState(() => isLoggingIn = true);
+              try {
+                await loginAction();
+                if (context.mounted) Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  setModalState(() => isLoggingIn = false);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
+                }
+              }
+            }
+
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 8),
+                const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
+                const SizedBox(height: 24),
+                if (isLoggingIn)
+                  const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold))
+                else ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => handleLogin(() => _authService.signInWithGoogle()),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
+                      icon: const Icon(Icons.login),
+                      label: const Text('Sign in with Google'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => handleLogin(() => _authService.signInAnonymously()),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text('Continue Anonymously'),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+              ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _authService.signInAnonymously();
-                  Navigator.pop(context);
-                },
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
-                icon: const Icon(Icons.person_outline),
-                label: const Text('Continue Anonymously'),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
+          );
+        },
+      );
+    },
     );
   }
 

@@ -42,20 +42,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   
-                  StreamBuilder<User?>(
-                    stream: _auth.authStateChanges(),
-                    builder: (context, authSnapshot) {
-                      if (authSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
-                      final user = authSnapshot.data;
+                  StreamBuilder<UserProfile?>(
+                    stream: _userService.currentUserProfileStream,
+                    builder: (context, snapshot) {
+                      final user = _auth.currentUser;
                       if (user == null) return _buildGuestView();
 
-                      return StreamBuilder<UserProfile?>(
-                        stream: _userService.currentUserProfileStream,
-                        builder: (context, profileSnapshot) {
-                          final profile = profileSnapshot.data;
-                          return _buildUserProfileView(user, profile);
-                        },
-                      );
+                      // If profile data is still loading but user is authenticated
+                      final profile = snapshot.data;
+                      return _buildUserProfileView(user, profile);
                     },
                   ),
                 ],
@@ -101,52 +96,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       backgroundColor: ImanFlowTheme.bgMid,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 8),
-            const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _authService.signInWithGoogle();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
-                icon: const Icon(Icons.login),
-                label: const Text('Sign in with Google'),
-              ),
+      builder: (context) {
+        bool isLoggingIn = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> handleLogin(Future<void> Function() loginAction) async {
+              setModalState(() => isLoggingIn = true);
+              try {
+                await loginAction();
+                if (context.mounted) Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  setModalState(() => isLoggingIn = false);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
+                }
+              }
+            }
+
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Sign In to Iman Flow', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 8),
+                const Text('Your progress will be synced across all your devices.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
+                const SizedBox(height: 24),
+                if (isLoggingIn)
+                  const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold))
+                else ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => handleLogin(() => _authService.signInWithGoogle()),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.all(16)),
+                      icon: const Icon(Icons.login),
+                      label: const Text('Sign in with Google'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => handleLogin(() => _authService.signInAnonymously()),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text('Continue Anonymously'),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+              ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _authService.signInAnonymously();
-                  Navigator.pop(context);
-                },
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.all(16), side: const BorderSide(color: Colors.white24)),
-                icon: const Icon(Icons.person_outline),
-                label: const Text('Continue Anonymously'),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
+          );
+        },
+      );
+    },
     );
   }
 
   Widget _buildUserProfileView(User user, UserProfile? profile) {
     if (profile == null) {
+      // Trigger creation if profile doesn't exist yet, but show fallback UI
       _userService.createOrUpdateProfile();
-      return const CircularProgressIndicator(color: ImanFlowTheme.gold);
     }
+
+    final displayName = profile?.displayName ?? user.displayName ?? user.email?.split('@')[0] ?? 'User';
+    final photoUrl = user.photoURL;
+    final versesCount = profile?.versesSharedCount ?? 0;
+    final likesCount = profile?.likesReceivedCount ?? 0;
+    final bio = profile?.bio;
 
     return Column(
       children: [
@@ -168,11 +187,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text(profile.displayName ?? 'User', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-        if (profile.bio != null && profile.bio!.isNotEmpty)
+        Text(displayName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+        if (bio != null && bio.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(profile.bio!, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.6))),
+            child: Text(bio, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.6))),
           ),
         
         const SizedBox(height: 32),
@@ -180,9 +199,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Stats Cards
         Row(
           children: [
-            Expanded(child: _buildStatCard(Icons.share, '${profile.versesSharedCount}', 'Verses Shared')),
+            Expanded(child: _buildStatCard(Icons.share, '$versesCount', 'Verses Shared')),
             const SizedBox(width: 16),
-            Expanded(child: _buildStatCard(Icons.favorite, '${profile.likesReceivedCount}', 'Likes Received')),
+            Expanded(child: _buildStatCard(Icons.favorite, '$likesCount', 'Likes Received')),
           ],
         ),
 
