@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
@@ -100,16 +101,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         bool isLoggingIn = false;
         return StatefulBuilder(
           builder: (context, setModalState) {
-            Future<void> handleLogin(Future<void> Function() loginAction) async {
+            Future<void> handleLogin(Future<UserCredential?> Function() loginAction) async {
               setModalState(() => isLoggingIn = true);
               try {
-                await loginAction();
-                if (context.mounted) Navigator.pop(context);
+                final credential = await loginAction();
+                if (credential != null && context.mounted) {
+                  Navigator.pop(context); // close modal
+                  context.go('/home');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Welcome! You are now signed in'), backgroundColor: ImanFlowTheme.gold),
+                  );
+                }
               } catch (e) {
                 if (context.mounted) {
-                  setModalState(() => isLoggingIn = false);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
                 }
+              } finally {
+                if (context.mounted) setModalState(() => isLoggingIn = false);
               }
             }
 
@@ -156,15 +164,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildUserProfileView(User user, UserProfile? profile) {
-    if (profile == null) {
-      // Trigger creation if profile doesn't exist yet, but show fallback UI
-      _userService.createOrUpdateProfile();
-    }
-
     final displayName = profile?.displayName ?? user.displayName ?? user.email?.split('@')[0] ?? 'User';
-    final photoUrl = user.photoURL;
+    final photoUrl = profile?.photoURL ?? user.photoURL;
+    final email = profile?.email ?? user.email;
+    final joinedAt = profile?.joinedAt;
     final versesCount = profile?.versesSharedCount ?? 0;
     final likesCount = profile?.likesReceivedCount ?? 0;
+    final prayerStreak = profile?.prayerStreak ?? 0;
+    final quranStreak = profile?.quranStreak ?? 0;
+    final dhikrStreak = profile?.dhikrStreak ?? 0;
     final bio = profile?.bio;
 
     return Column(
@@ -180,28 +188,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: CircleAvatar(
             radius: 50,
             backgroundColor: ImanFlowTheme.bgMid,
-            backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-            child: user.photoURL == null
+            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+            child: photoUrl == null
                 ? Text(displayName[0].toUpperCase(), style: const TextStyle(fontSize: 32, color: ImanFlowTheme.gold))
                 : null,
           ),
         ),
         const SizedBox(height: 16),
         Text(displayName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-        if (bio != null && bio.isNotEmpty)
+        if (email != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(email, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14)),
+          ),
+        if (joinedAt != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Member since ${DateFormat('MMMM yyyy').format(joinedAt)}',
+              style: TextStyle(color: ImanFlowTheme.gold.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+        if (bio != null && bio.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
             child: Text(bio, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.6))),
           ),
         
         const SizedBox(height: 32),
 
-        // Stats Cards
+        // Stats Cards - Social
         Row(
           children: [
-            Expanded(child: _buildStatCard(Icons.share, '$versesCount', 'Verses Shared')),
-            const SizedBox(width: 16),
-            Expanded(child: _buildStatCard(Icons.favorite, '$likesCount', 'Likes Received')),
+            Expanded(child: _buildStatCard(Icons.share_rounded, '$versesCount', 'Verses Shared')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildStatCard(Icons.favorite_rounded, '$likesCount', 'Likes Received')),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Stats Cards - Streaks
+        Row(
+          children: [
+            Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, '$prayerStreak', 'Prayer Streak')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildStatCard(Icons.menu_book_rounded, '$quranStreak', 'Quran Streak')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildStatCard(Icons.auto_awesome_rounded, '$dhikrStreak', 'Dhikr Streak')),
           ],
         ),
 
@@ -213,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             children: [
-               _buildSettingsTile(Icons.edit, 'Edit Profile', () {}),
+               _buildSettingsTile(Icons.edit, 'Edit Profile', () => _showEditProfileDialog(profile)),
                _buildSettingsTile(Icons.settings, 'Account Settings', () => context.push('/settings')),
                _buildSettingsTile(Icons.logout, 'Sign Out', () => _authService.signOut(), isDestructive: true, showDivider: false),
             ],
@@ -226,19 +260,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatCard(IconData icon, String value, String label) {
     return Glass(
       radius: 16,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
         children: [
-          Icon(icon, color: ImanFlowTheme.gold, size: 28),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          Icon(icon, color: ImanFlowTheme.gold, size: 22),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+          Text(
+            label, 
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.5)),
+          ),
         ],
       ),
     );
   }
   
+  void _showEditProfileDialog(UserProfile? profile) {
+    final nameController = TextEditingController(text: profile?.displayName);
+    final bioController = TextEditingController(text: profile?.bio);
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: ImanFlowTheme.bgMid,
+          surfaceTintColor: Colors.transparent,
+          title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  labelStyle: const TextStyle(color: Colors.white60),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ImanFlowTheme.gold)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: bioController,
+                maxLines: 3,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Bio',
+                  labelStyle: const TextStyle(color: Colors.white60),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: ImanFlowTheme.gold)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+            ),
+            if (isSaving)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: ImanFlowTheme.gold)),
+              )
+            else
+              TextButton(
+                onPressed: () async {
+                  setDialogState(() => isSaving = true);
+                  try {
+                    await _userService.createOrUpdateProfile(
+                      displayName: nameController.text.trim(),
+                      bio: bioController.text.trim(),
+                    );
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (context.mounted) {
+                      setDialogState(() => isSaving = false);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+                    }
+                  }
+                },
+                child: const Text('Save', style: TextStyle(color: ImanFlowTheme.gold)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false, bool showDivider = true}) {
     return Column(
       children: [

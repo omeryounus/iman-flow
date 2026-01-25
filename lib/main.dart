@@ -10,15 +10,18 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  print('Main: Starting application...');
   
   // Enable Edge-to-Edge for Android 15+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   
   // Initialize Firebase (optional - app works in demo mode without it)
   try {
+    print('Main: Initializing Firebase...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    print('Main: Firebase initialized');
     
     // Pass all uncaught "fatal" errors from the framework to Crashlytics
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -36,7 +39,9 @@ void main() async {
   }
   
   // Setup service locator for dependency injection
+  print('Main: Setting up Service Locator...');
   await setupServiceLocator();
+  print('Main: Service Locator ready');
   
   runApp(const ImanFlowApp());
 }

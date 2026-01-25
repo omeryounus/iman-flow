@@ -34,6 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    
+    // Listen for profile changes (auth state + firestore) to refresh home data
+    getIt<UserService>().currentUserProfileStream.listen((profile) {
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _loadData() async {

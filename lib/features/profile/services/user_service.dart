@@ -20,7 +20,12 @@ class UserService {
     });
   }
 
-  Future<void> createOrUpdateProfile({String? displayName, String? bio}) async {
+  Future<void> createOrUpdateProfile({
+    String? displayName,
+    String? email,
+    String? photoURL,
+    String? bio,
+  }) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -36,7 +41,9 @@ class UserService {
         print('UserService: Creating new profile in Firestore...');
         final profile = UserProfile(
           uid: user.uid,
-          displayName: displayName ?? user.displayName ?? 'User',
+          displayName: displayName ?? user.displayName ?? (user.isAnonymous ? 'Guest User' : 'User'),
+          email: email ?? user.email,
+          photoURL: photoURL ?? user.photoURL,
           bio: bio ?? '',
           joinedAt: DateTime.now(),
         );
@@ -46,6 +53,8 @@ class UserService {
         print('UserService: Updating existing profile...');
         final updates = <String, dynamic>{};
         if (displayName != null) updates['displayName'] = displayName;
+        if (email != null) updates['email'] = email;
+        if (photoURL != null) updates['photoURL'] = photoURL;
         if (bio != null) updates['bio'] = bio;
         
         if (updates.isNotEmpty) {

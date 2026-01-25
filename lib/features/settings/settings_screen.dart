@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/glass_widgets.dart';
 import '../../shared/widgets/premium_background.dart';
@@ -334,16 +336,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         bool isLoggingIn = false;
         return StatefulBuilder(
           builder: (context, setModalState) {
-            Future<void> handleLogin(Future<void> Function() loginAction) async {
+            Future<void> handleLogin(Future<UserCredential?> Function() loginAction) async {
               setModalState(() => isLoggingIn = true);
               try {
-                await loginAction();
-                if (context.mounted) Navigator.pop(context);
+                final credential = await loginAction();
+                if (credential != null && context.mounted) {
+                  Navigator.pop(context); // close modal
+                  context.go('/home');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Welcome! You are now signed in'), backgroundColor: ImanFlowTheme.gold),
+                  );
+                }
               } catch (e) {
                 if (context.mounted) {
-                  setModalState(() => isLoggingIn = false);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
                 }
+              } finally {
+                if (context.mounted) setModalState(() => isLoggingIn = false);
               }
             }
 

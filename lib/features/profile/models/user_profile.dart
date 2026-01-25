@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserProfile {
   final String uid;
   final String? displayName;
+  final String? email;
+  final String? photoURL;
   final String? bio;
   final DateTime joinedAt;
   final int versesSharedCount;
@@ -15,6 +17,8 @@ class UserProfile {
   UserProfile({
     required this.uid,
     this.displayName,
+    this.email,
+    this.photoURL,
     this.bio,
     required this.joinedAt,
     this.versesSharedCount = 0,
@@ -30,6 +34,8 @@ class UserProfile {
     return UserProfile(
       uid: doc.id,
       displayName: data['displayName'],
+      email: data['email'],
+      photoURL: data['photoURL'],
       bio: data['bio'],
       joinedAt: (data['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       versesSharedCount: data['versesSharedCount'] ?? 0,
@@ -44,6 +50,8 @@ class UserProfile {
   Map<String, dynamic> toMap() {
     return {
       'displayName': displayName,
+      'email': email,
+      'photoURL': photoURL,
       'bio': bio,
       'joinedAt': joinedAt, // Usually not updated, but include for creation
       'versesSharedCount': versesSharedCount,
@@ -58,6 +66,8 @@ class UserProfile {
   // Create a copyWith for optimistic updates
   UserProfile copyWith({
     String? displayName,
+    String? email,
+    String? photoURL,
     String? bio,
     int? versesSharedCount,
     int? likesReceivedCount,
@@ -69,6 +79,8 @@ class UserProfile {
     return UserProfile(
       uid: uid,
       displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      photoURL: photoURL ?? this.photoURL,
       bio: bio ?? this.bio,
       joinedAt: joinedAt,
       versesSharedCount: versesSharedCount ?? this.versesSharedCount,

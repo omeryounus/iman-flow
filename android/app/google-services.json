@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "504848553840",
+    "firebase_url": "https://esas-67202-default-rtdb.firebaseio.com",
     "project_id": "esas-67202",
     "storage_bucket": "esas-67202.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.imanflow.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "504848553840-rsiqcn73bqljika9l9cca4fsieof6oe4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBc-erPTsP28-5bUKy6GRhwWPKVGdaZd1k"
@@ -20,7 +26,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "504848553840-rsiqcn73bqljika9l9cca4fsieof6oe4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "504848553840-4sf92ulqdqmsqk6aq5l2refr5b9mtq3j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.imanflow.imanFlow"
+              }
+            }
+          ]
         }
       }
     }

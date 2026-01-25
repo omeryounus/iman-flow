@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../shared/widgets/auth_wrapper.dart';
+import '../core/services/auth_notifier.dart';
+import '../core/services/service_locator.dart';
 
 import 'background_particles.dart';
 import 'screens.dart';
@@ -49,17 +51,53 @@ class AppTheme {
 /// ===============================
 /// ROUTER (Real navigation)
 /// ===============================
+
 final GoRouter appRouter = GoRouter(
+  // This makes router re-evaluate redirect on auth changes
+  refreshListenable: getIt<AuthNotifier>(),
+  
   initialLocation: '/home',
+  
+  redirect: (context, state) {
+    final authNotifier = getIt<AuthNotifier>();
+    final user = authNotifier.currentUser;
+    final String location = state.uri.toString();
+
+    // Define protected routes (require login)
+    final bool isProtectedRoute = location.startsWith('/profile') ||
+                                  location.startsWith('/settings');
+
+    // Define login-related routes (if you have a dedicated login page)
+    final bool isLoginRoute = location.contains('/login');
+
+    // Not logged in → redirect from protected areas
+    if (user == null) {
+      if (isProtectedRoute) {
+        // Since profile/settings currently have a guest view, we allow access
+        // but if strict protection is needed, return '/home' here.
+        // return '/home';
+      }
+      return null;
+    }
+
+    // Logged in → prevent staying on login page (if you have one)
+    if (isLoginRoute) {
+      return '/home';
+    }
+
+    return null;
+  },
   routes: [
     ShellRoute(
-      builder: (context, state, child) => AppShell(child: child),
+      builder: (context, state, child) => AuthWrapper(child: AppShell(child: child)),
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
         GoRoute(path: '/quran', builder: (_, __) => const QuranAiScreen()),
         GoRoute(path: '/prayer', builder: (_, __) => const PrayerTimesScreen()),
         GoRoute(path: '/dhikr', builder: (_, __) => const DhikrScreen()),
         GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
+        GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     ),
     GoRoute(
