@@ -55,6 +55,13 @@ class ImanFlowTheme {
           color: Colors.white,
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: gold,
+        contentTextStyle: GoogleFonts.inter(color: Colors.black, fontWeight: FontWeight.bold),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+      ),
     );
   }
 

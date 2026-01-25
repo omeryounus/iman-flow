@@ -5,6 +5,7 @@ import '../../../shared/widgets/glass_widgets.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/audio_service.dart';
+import '../../../core/models/dua_audio.dart';
 import 'dhikr_player.dart';
 
 /// Dhikr Counter Widget - Digital Tasbih
@@ -19,6 +20,7 @@ class DhikrCounter extends StatefulWidget {
 
 class _DhikrCounterState extends State<DhikrCounter> with SingleTickerProviderStateMixin {
   final StreakService _streakService = getIt<StreakService>();
+  final AudioService _audioService = getIt<AudioService>();
   
   int _count = 0;
   int _targetCount = 33;
@@ -69,8 +71,6 @@ class _DhikrCounterState extends State<DhikrCounter> with SingleTickerProviderSt
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$_selectedDhikr completed! 📿'),
-          backgroundColor: ImanFlowTheme.gold,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -233,76 +233,91 @@ class _DhikrCounterState extends State<DhikrCounter> with SingleTickerProviderSt
   }
 
   Widget _buildPlayerHeaderCard() {
-    final morningDua = DuaAudio.morningDuas.first;
+    return StreamBuilder<List<DuaAudio>>(
+      stream: _audioService.getAudioStream('morning'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+           // Show empty space while loading morning content to avoid visual jump
+           return const SizedBox(height: 10); 
+        }
 
-    return Glass(
-      radius: 28,
-      padding: const EdgeInsets.all(24),
-      color: ImanFlowTheme.bgBot.withOpacity(0.4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        final audios = snapshot.data ?? [];
+        if (audios.isEmpty) {
+          return const SizedBox.shrink(); // Hide if no morning content
+        }
+
+        final featured = audios.first;
+
+        return Glass(
+          radius: 28,
+          padding: const EdgeInsets.all(24),
+          color: ImanFlowTheme.bgBot.withOpacity(0.4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: ImanFlowTheme.gold.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: ImanFlowTheme.gold.withOpacity(0.2)),
-                ),
-                child: const Text(
-                  'Morning Dhikr',
-                  style: TextStyle(color: ImanFlowTheme.gold, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const Spacer(),
-              Icon(Icons.notifications_none_rounded, color: Colors.white.withOpacity(0.6)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Morning Dhikr for Peace',
-            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start your day with calm remembrance and gratitude.',
-            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14, height: 1.4),
-          ),
-          const SizedBox(height: 24),
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => DhikrPlayer(dua: morningDua)),
-              );
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Row(
+              Row(
                 children: [
-                  const Icon(Icons.play_arrow_rounded, color: ImanFlowTheme.gold),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Open Player',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: ImanFlowTheme.gold.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: ImanFlowTheme.gold.withOpacity(0.2)),
+                    ),
+                    child: const Text(
+                      'Morning Dhikr',
+                      style: TextStyle(color: ImanFlowTheme.gold, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.3)),
+                  const Spacer(),
+                  Icon(Icons.notifications_none_rounded, color: Colors.white.withOpacity(0.6)),
                 ],
               ),
-            ),
+              const SizedBox(height: 20),
+              Text(
+                featured.name,
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Start your day with calm remembrance and gratitude.',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14, height: 1.4),
+              ),
+              const SizedBox(height: 24),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DhikrPlayer(dua: featured)),
+                  );
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.play_arrow_rounded, color: ImanFlowTheme.gold),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Open Player',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: Colors.white.withOpacity(0.3)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 

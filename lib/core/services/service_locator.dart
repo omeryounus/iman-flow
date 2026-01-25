@@ -10,7 +10,10 @@ import 'streak_service.dart';
 import 'premium_service.dart';
 import 'settings_service.dart';
 import 'daily_content_service.dart';
+import 'admin_service.dart';
 import '../../features/profile/services/user_service.dart';
+import '../../features/community/services/challenge_service.dart';
+import '../../features/devotionals/services/community_dua_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -29,6 +32,9 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<SettingsService>(() => SettingsService());
   getIt.registerLazySingleton<DailyContentService>(() => DailyContentService());
   getIt.registerLazySingleton<UserService>(() => UserService());
+  getIt.registerLazySingleton<AdminService>(() => AdminService());
+  getIt.registerLazySingleton<ChallengeService>(() => ChallengeService());
+  getIt.registerLazySingleton<CommunityDuaService>(() => CommunityDuaService());
   
   // Initialize services that need async setup
   print('ServiceLocator: Initializing SettingsService...');

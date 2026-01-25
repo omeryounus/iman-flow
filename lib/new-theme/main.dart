@@ -7,6 +7,7 @@ import '../core/services/service_locator.dart';
 
 import 'background_particles.dart';
 import 'screens.dart';
+import '../features/admin/admin_dashboard.dart';
 
 void main() => runApp(const QuranAiApp());
 
@@ -54,14 +55,14 @@ class AppTheme {
 
 final GoRouter appRouter = GoRouter(
   // This makes router re-evaluate redirect on auth changes
-  refreshListenable: getIt<AuthNotifier>(),
+  // refreshListenable: getIt<AuthNotifier>(),
   
-  initialLocation: '/home',
+  initialLocation: '/',
   
   redirect: (context, state) {
     final authNotifier = getIt<AuthNotifier>();
     final user = authNotifier.currentUser;
-    final String location = state.uri.toString();
+    final String location = state.uri.path;
 
     // Define protected routes (require login)
     final bool isProtectedRoute = location.startsWith('/profile') ||
@@ -91,13 +92,14 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) => AuthWrapper(child: AppShell(child: child)),
       routes: [
-        GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+        GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
         GoRoute(path: '/quran', builder: (_, __) => const QuranAiScreen()),
         GoRoute(path: '/prayer', builder: (_, __) => const PrayerTimesScreen()),
         GoRoute(path: '/dhikr', builder: (_, __) => const DhikrScreen()),
         GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
         GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+        GoRoute(path: '/admin', builder: (_, __) => const AdminDashboard()),
       ],
     ),
     GoRoute(
@@ -129,6 +131,7 @@ class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
 
   int _indexFromLocation(String loc) {
+    if (loc == '/' || loc.startsWith('/home')) return 0;
     if (loc.startsWith('/quran')) return 1;
     if (loc.startsWith('/prayer')) return 2;
     if (loc.startsWith('/dhikr')) return 3;
@@ -139,7 +142,7 @@ class AppShell extends StatelessWidget {
   void _go(BuildContext context, int i) {
     switch (i) {
       case 0:
-        context.go('/home');
+        context.go('/');
         break;
       case 1:
         context.go('/quran');

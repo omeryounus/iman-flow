@@ -185,7 +185,7 @@ class _VerseShareState extends State<VerseShare> {
 
   void _copyVerse(SharedVerse verse) {
     Clipboard.setData(ClipboardData(text: '${verse.arabicText}\n\n"${verse.translation}"\n\n- Quran ${verse.verseKey}'));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied!'), backgroundColor: ImanFlowTheme.bgMid));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied!')));
   }
 
   void _shareVerse(SharedVerse verse) {
@@ -248,12 +248,15 @@ class _VerseShareState extends State<VerseShare> {
       );
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shared successfully!'), backgroundColor: ImanFlowTheme.gold));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shared successfully!')));
         _verseRefController.clear();
         _reflectionController.clear();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error: $e', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: ImanFlowTheme.error,
+      ));
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }

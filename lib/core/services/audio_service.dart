@@ -1,11 +1,26 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import '../models/dua_audio.dart';
 
 /// Audio Service for Duas, Quran recitations, and meditation
 class AudioService {
   final AudioPlayer _player = AudioPlayer();
-  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  CollectionReference get _audioCollection => _firestore.collection('audio_content');
+
+  /// Stream of audio content from Firestore by category
+  Stream<List<DuaAudio>> getAudioStream(String category) {
+    return _audioCollection
+        .where('category', isEqualTo: category)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => DuaAudio.fromFirestore(doc)).toList();
+        });
+  }
   bool get isPlaying => _player.playing;
   Duration? get duration => _player.duration;
   Duration get position => _player.position;
@@ -32,17 +47,17 @@ class AudioService {
 
   /// Play cached audio (downloads if not cached)
   Future<void> playCached(String url, String cacheKey) async {
-    final cacheDir = await getApplicationDocumentsDirectory();
-    final cacheFile = File('${cacheDir.path}/audio_cache/$cacheKey.mp3');
-    
-    if (await cacheFile.exists()) {
-      await _player.setFilePath(cacheFile.path);
-    } else {
-      // Download and cache for offline use
-      await _player.setUrl(url);
-      // Note: Actual download/caching would need additional implementation
-    }
     await _player.play();
+  }
+
+  /// Play audio from bytes (e.g. from Amazon Polly)
+  Future<void> playBytes(Uint8List bytes) async {
+    try {
+      await _player.setAudioSource(MyCustomSource(bytes));
+      await _player.play();
+    } catch (e) {
+      print("AudioService: Error playing bytes: $e");
+    }
   }
 
   /// Pause playback
@@ -81,74 +96,20 @@ class AudioService {
   }
 }
 
-/// Dua audio collection
-class DuaAudio {
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String category; // morning, evening, sleep, general
-  final String audioUrl;
-  final Duration duration;
-  final bool isPremium;
+class MyCustomSource extends StreamAudioSource {
+  final Uint8List bytes;
+  MyCustomSource(this.bytes);
 
-  DuaAudio({
-    required this.id,
-    required this.name,
-    required this.nameArabic,
-    required this.category,
-    required this.audioUrl,
-    required this.duration,
-    this.isPremium = false,
-  });
-
-  /// Sample Duas for MVP
-  static List<DuaAudio> get morningDuas => [
-    DuaAudio(
-      id: 'morning_1',
-      name: 'Morning Adhkar',
-      nameArabic: 'أذكار الصباح',
-      category: 'morning',
-      audioUrl: 'assets/audio/morning_adhkar.mp3',
-      duration: const Duration(minutes: 5),
-    ),
-    DuaAudio(
-      id: 'morning_2',
-      name: 'Ayatul Kursi',
-      nameArabic: 'آية الكرسي',
-      category: 'morning',
-      audioUrl: 'assets/audio/ayatul_kursi.mp3',
-      duration: const Duration(minutes: 2),
-    ),
-  ];
-
-  static List<DuaAudio> get eveningDuas => [
-    DuaAudio(
-      id: 'evening_1',
-      name: 'Evening Adhkar',
-      nameArabic: 'أذكار المساء',
-      category: 'evening',
-      audioUrl: 'assets/audio/evening_adhkar.mp3',
-      duration: const Duration(minutes: 5),
-    ),
-  ];
-
-  static List<DuaAudio> get sleepDuas => [
-    DuaAudio(
-      id: 'sleep_1',
-      name: 'Surah Al-Mulk',
-      nameArabic: 'سورة الملك',
-      category: 'sleep',
-      audioUrl: 'assets/audio/surah_mulk.mp3',
-      duration: const Duration(minutes: 8),
-      isPremium: true,
-    ),
-    DuaAudio(
-      id: 'sleep_2',
-      name: 'Sleep Dua',
-      nameArabic: 'دعاء النوم',
-      category: 'sleep',
-      audioUrl: 'assets/audio/sleep_dua.mp3',
-      duration: const Duration(minutes: 1),
-    ),
-  ];
+  @override
+  Future<StreamAudioResponse> request([int? start, int? end]) async {
+    start ??= 0;
+    end ??= bytes.length;
+    return StreamAudioResponse(
+      sourceLength: bytes.length,
+      contentLength: end - start,
+      offset: start,
+      stream: Stream.value(bytes.sublist(start, end)),
+      contentType: 'audio/mpeg',
+    );
+  }
 }

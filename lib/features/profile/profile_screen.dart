@@ -109,12 +109,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.pop(context); // close modal
                   context.go('/home');
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Welcome! You are now signed in'), backgroundColor: ImanFlowTheme.gold),
+                    const SnackBar(content: Text('Welcome! You are now signed in')),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Login failed: $e', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), 
+                    backgroundColor: ImanFlowTheme.error
+                  ));
                 }
               } finally {
                 if (context.mounted) setModalState(() => isLoggingIn = false);
@@ -247,6 +250,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             children: [
+               if (profile?.isAdmin ?? false)
+                 _buildSettingsTile(Icons.admin_panel_settings, 'Admin Dashboard', () => context.push('/admin'), iconColor: ImanFlowTheme.gold),
                _buildSettingsTile(Icons.edit, 'Edit Profile', () => _showEditProfileDialog(profile)),
                _buildSettingsTile(Icons.settings, 'Account Settings', () => context.push('/settings')),
                _buildSettingsTile(Icons.logout, 'Sign Out', () => _authService.signOut(), isDestructive: true, showDivider: false),
@@ -339,7 +344,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   } catch (e) {
                     if (context.mounted) {
                       setDialogState(() => isSaving = false);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Failed to update: $e', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                        backgroundColor: ImanFlowTheme.error,
+                      ));
                     }
                   }
                 },
@@ -351,11 +359,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false, bool showDivider = true}) {
+  Widget _buildSettingsTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false, bool showDivider = true, Color? iconColor}) {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: isDestructive ? Colors.redAccent : Colors.white70),
+          leading: Icon(icon, color: iconColor ?? (isDestructive ? Colors.redAccent : Colors.white70)),
           title: Text(title, style: TextStyle(color: isDestructive ? Colors.redAccent : Colors.white)),
           trailing: const Icon(Icons.chevron_right, size: 16, color: Colors.white30),
           onTap: onTap,

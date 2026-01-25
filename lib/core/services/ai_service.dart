@@ -12,8 +12,7 @@ class AIService {
   String? _secretAccessKey;
   String? _apiKey;
   String _region = 'us-east-1';
-  // String _modelId = 'anthropic.claude-3-haiku-20240307-v1:0';
-  String _modelId = 'amazon.nova-lite-v1:0';
+  String _modelId = 'amazon.nova-pro-v1:0';
   
   bool get _isConfigured => 
       (_accessKeyId != null && _accessKeyId!.isNotEmpty && _secretAccessKey != null && _secretAccessKey!.isNotEmpty) || 
@@ -133,25 +132,80 @@ RESPONSE FORMAT:
         data: payload,
         options: Options(
           headers: signedRequest.headers,
+          responseType: ResponseType.json,
         ),
       );
-
+      
       return _parseResponse(response.data);
     } catch (e) {
       print('AI Service Error: $e');
       if (e is DioException) {
          if (e.response != null) {
            print('Bedrock Error Body: ${e.response?.data}');
-           // If unauthorized, fallback to demo message instead of crashing UI
            if (e.response?.statusCode == 403) {
-             return "⚠️ **Access Denied**\n\nThe security token is invalid or expired. Please check your AWS credentials.\n\n(Falling back to Demo Mode functionality in UI)";
+             return "⚠️ **Access Denied**\n\nThe security token is invalid or expired. Please check your AWS credentials.";
            }
-           return 'AWS Bedrock Error (${e.response?.statusCode}): ${e.response?.data}';
+           return 'AWS Error (${e.response?.statusCode})';
          }
-         return 'Error connecting to AWS Bedrock: ${e.message}';
       }
-      return "Sorry, I couldn't process your request at this moment: $e";
+      return "Sorry, I couldn't process your request.";
     }
+  }
+
+  /// Synthesize Speech using Amazon Polly
+  Future<Stream<List<int>>?> synthesizeSpeech(String text) async {
+    if (!_isConfigured || _accessKeyId == null || _secretAccessKey == null) return null;
+
+    try {
+      final endpoint = 'https://polly.$_region.amazonaws.com/v1/speech';
+      final payload = jsonEncode({
+        'OutputFormat': 'mp3',
+        'Text': text,
+        'VoiceId': 'Joanna', // A clear, knowledgeable female voice
+        'Engine': 'neural',
+      });
+
+      final request = AWSHttpRequest(
+        method: AWSHttpMethod.post,
+        uri: Uri.parse(endpoint),
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: utf8.encode(payload),
+      );
+
+      final signer = AWSSigV4Signer(
+        credentialsProvider: AWSCredentialsProvider(
+          AWSCredentials(_accessKeyId!, _secretAccessKey!),
+        ),
+      );
+
+      final scope = AWSCredentialScope(
+        region: _region,
+        service: AWSService.polly,
+      );
+
+      final signedRequest = await signer.sign(
+        request,
+        credentialScope: scope,
+      );
+
+      final response = await _dio.post(
+        endpoint,
+        data: payload,
+        options: Options(
+          headers: signedRequest.headers,
+          responseType: ResponseType.stream,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return (response.data as ResponseBody).stream;
+      }
+    } catch (e) {
+      print('Polly TTS Error: $e');
+    }
+    return null;
   }
 
   String _parseResponse(dynamic data) {

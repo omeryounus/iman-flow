@@ -209,7 +209,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     if (success && mounted) {
       Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🎉 Welcome to Iman Flow Pro!'), backgroundColor: ImanFlowTheme.gold));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🎉 Welcome to Iman Flow Pro!')));
     }
   }
 
@@ -220,7 +220,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success ? 'Purchases restored successfully!' : 'No previous purchases found'), backgroundColor: success ? ImanFlowTheme.success : ImanFlowTheme.bgMid));
+        content: Text(success ? 'Purchases restored successfully!' : 'No previous purchases found', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), 
+        backgroundColor: success ? ImanFlowTheme.gold : ImanFlowTheme.error));
       if (success) Navigator.of(context).pop(true);
     }
   }

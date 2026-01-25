@@ -13,6 +13,7 @@ class UserProfile {
   final int quranStreak;
   final int dhikrStreak;
   final DateTime? lastActiveDate;
+  final bool isAdmin;
 
   UserProfile({
     required this.uid,
@@ -27,6 +28,7 @@ class UserProfile {
     this.quranStreak = 0,
     this.dhikrStreak = 0,
     this.lastActiveDate,
+    this.isAdmin = false,
   });
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
@@ -44,6 +46,7 @@ class UserProfile {
       quranStreak: data['quranStreak'] ?? 0,
       dhikrStreak: data['dhikrStreak'] ?? 0,
       lastActiveDate: (data['lastActiveDate'] as Timestamp?)?.toDate(),
+      isAdmin: data['isAdmin'] ?? false,
     );
   }
 
@@ -60,6 +63,7 @@ class UserProfile {
       'quranStreak': quranStreak,
       'dhikrStreak': dhikrStreak,
       'lastActiveDate': lastActiveDate,
+      'isAdmin': isAdmin,
     };
   }
   
@@ -75,6 +79,7 @@ class UserProfile {
     int? quranStreak,
     int? dhikrStreak,
     DateTime? lastActiveDate,
+    bool? isAdmin,
   }) {
     return UserProfile(
       uid: uid,
@@ -89,6 +94,7 @@ class UserProfile {
       quranStreak: quranStreak ?? this.quranStreak,
       dhikrStreak: dhikrStreak ?? this.dhikrStreak,
       lastActiveDate: lastActiveDate ?? this.lastActiveDate,
+      isAdmin: isAdmin ?? this.isAdmin,
     );
   }
 }

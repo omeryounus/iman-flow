@@ -5,6 +5,10 @@ import '../../shared/widgets/glass_widgets.dart';
 import '../../shared/widgets/premium_background.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/services/audio_service.dart';
+import 'dart:typed_data';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
 
 /// AI Chat Screen - Islamic Q&A with LLM
 class AiChatScreen extends StatefulWidget {
@@ -16,10 +20,19 @@ class AiChatScreen extends StatefulWidget {
 
 class _AiChatScreenState extends State<AiChatScreen> {
   final AIService _aiService = getIt<AIService>();
+  final AudioService _audioService = getIt<AudioService>();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+
+  // Voice Services
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  // Falling back to system TTS only if Amazon synthesis fails or not configured
+  final FlutterTts _systemTts = FlutterTts(); 
+  bool _isListening = false;
+  String _lastWords = '';
+  String? _currentlySpeakingId;
 
   // Suggested queries for quick access
   final List<String> _suggestedQueries = [
@@ -49,12 +62,21 @@ I'm your Islamic knowledge assistant. I can help you with:
 How can I help you today?''',
       isUser: false,
     ));
+    _initVoice();
+  }
+
+  Future<void> _initVoice() async {
+    await _systemTts.setLanguage("en-US");
+    await _systemTts.setSpeechRate(0.5);
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _systemTts.stop();
+    _audioService.stop();
+    _speech.stop();
     super.dispose();
   }
 
@@ -100,6 +122,67 @@ How can I help you today?''',
     }
 
     _scrollToBottom();
+  }
+
+  Future<void> _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (val) => print('onStatus: $val'),
+        onError: (val) => print('onError: $val'),
+      );
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) => setState(() {
+            _lastWords = val.recognizedWords;
+            if (val.hasConfidenceRating && val.confidence > 0) {
+              _messageController.text = _lastWords;
+            }
+          }),
+        );
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  Future<void> _speak(String text, String messageId) async {
+    if (_currentlySpeakingId == messageId) {
+      await _audioService.stop();
+      await _systemTts.stop();
+      setState(() => _currentlySpeakingId = null);
+      return;
+    }
+
+    setState(() => _currentlySpeakingId = messageId);
+
+    try {
+      // 1. Try Amazon Polly (High Quality)
+      final byteStream = await _aiService.synthesizeSpeech(text);
+      if (byteStream != null) {
+        final List<int> bytes = [];
+        await for (final chunk in byteStream) {
+          bytes.addAll(chunk);
+        }
+        
+        if (bytes.isNotEmpty) {
+          await _audioService.playBytes(Uint8List.fromList(bytes));
+          // Note: we'd need a completion callback from audioService for full reset
+          // but for now we'll just let the icon stay for manual stop or assume it plays
+          return;
+        }
+      }
+      
+      // 2. Fallback to System TTS
+      await _systemTts.speak(text);
+      _systemTts.setCompletionHandler(() {
+        if (mounted) setState(() => _currentlySpeakingId = null);
+      });
+    } catch (e) {
+      print("Speak Error: $e");
+      if (mounted) setState(() => _currentlySpeakingId = null);
+    }
   }
 
   void _scrollToBottom() {
@@ -195,6 +278,10 @@ How can I help you today?''',
                           ),
                         ),
                         IconButton(
+                          onPressed: _listen,
+                          icon: Icon(_isListening ? Icons.mic : Icons.mic_none_rounded, color: _isListening ? Colors.redAccent : Colors.white60),
+                        ),
+                        IconButton(
                           onPressed: _isLoading ? null : () => _sendMessage(_messageController.text),
                           icon: Icon(Icons.send_rounded, color: _isLoading ? Colors.white38 : ImanFlowTheme.gold),
                         ),
@@ -240,6 +327,15 @@ How can I help you today?''',
                     Icon(Icons.auto_awesome, size: 12, color: ImanFlowTheme.gold),
                     const SizedBox(width: 6),
                     Text("Iman AI", style: TextStyle(color: ImanFlowTheme.gold, fontSize: 10, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => _speak(message.content, message.id),
+                      child: Icon(
+                        _currentlySpeakingId == message.id ? Icons.stop_circle_rounded : Icons.volume_up_rounded, 
+                        size: 16, 
+                        color: ImanFlowTheme.gold.withOpacity(0.7)
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),

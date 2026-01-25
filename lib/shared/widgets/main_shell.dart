@@ -12,7 +12,7 @@ class MainShell extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/home')) return 0;
+    if (location == '/' || location.startsWith('/home')) return 0;
     if (location.startsWith('/prayer')) return 1;
     if (location.startsWith('/quran')) return 2;
     if (location.startsWith('/devotionals')) return 3;
@@ -23,7 +23,7 @@ class MainShell extends StatelessWidget {
   void _onItemTapped(BuildContext context, int index) {
     switch (index) {
       case 0:
-        context.go('/home');
+        context.go('/');
         break;
       case 1:
         context.go('/prayer');

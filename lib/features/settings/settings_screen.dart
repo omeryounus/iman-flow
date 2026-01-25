@@ -121,7 +121,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!granted) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Notification permission denied')),
+                      SnackBar(
+                        content: const Text('Permission denied', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                        backgroundColor: ImanFlowTheme.error,
+                      ),
                     );
                   }
                   return;
@@ -257,7 +260,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isUpdatingLocation = true);
     final success = await _settingsService.updateLocationAutomatically();
     setState(() => _isUpdatingLocation = false);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(success ? 'Location updated!' : 'Failed to update location.'), backgroundColor: success ? ImanFlowTheme.gold : Colors.redAccent));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(success ? 'Location updated!' : 'Failed to update location.', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), 
+      backgroundColor: success ? ImanFlowTheme.gold : ImanFlowTheme.error));
   }
 
   void _showManualLocationDialog() {
@@ -319,6 +324,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Delete Account', style: TextStyle(color: Colors.white54)),
                   onTap: () => _showDeleteConfirm(),
                 ),
+                if (profile?.isAdmin ?? false) ...[
+                  Divider(height: 1, color: Colors.white.withOpacity(0.1), indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: const Icon(Icons.admin_panel_settings, color: ImanFlowTheme.gold),
+                    title: const Text('Admin Dashboard', style: TextStyle(color: ImanFlowTheme.gold)),
+                    subtitle: const Text('Content & User Management', style: TextStyle(fontSize: 10, color: Colors.white38)),
+                    trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+                    onTap: () => context.push('/admin'),
+                  ),
+                ],
               ],
             ],
           ),
@@ -344,12 +359,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Navigator.pop(context); // close modal
                   context.go('/home');
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Welcome! You are now signed in'), backgroundColor: ImanFlowTheme.gold),
+                    const SnackBar(content: Text('Welcome! You are now signed in')),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e'), backgroundColor: Colors.redAccent));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Login failed: $e', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), 
+                    backgroundColor: ImanFlowTheme.error
+                  ));
                 }
               } finally {
                 if (context.mounted) setModalState(() => isLoggingIn = false);

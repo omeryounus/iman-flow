@@ -3,6 +3,7 @@ import '../../../app/theme.dart';
 import '../../../shared/widgets/glass_widgets.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/audio_service.dart';
+import '../../../core/models/dua_audio.dart';
 
 class DhikrPlayer extends StatefulWidget {
   final DuaAudio dua;

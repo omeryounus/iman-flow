@@ -63,7 +63,12 @@ jobs:
         run: flutter pub get
 
       - name: Build App Bundle
-        run: flutter build appbundle --build-number=${{ github.run_number }}
+        run: |
+          flutter build appbundle \
+            --build-number=${{ github.run_number }} \
+            --dart-define=AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --dart-define=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --dart-define=BEDROCK_API_KEY=${{ secrets.BEDROCK_API_KEY }}
 
       - name: Upload to Play Store
         uses: r0adkll/upload-google-play@v1

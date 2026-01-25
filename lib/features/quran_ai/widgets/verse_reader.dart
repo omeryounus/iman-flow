@@ -60,7 +60,10 @@ class _VerseReaderState extends State<VerseReader> {
       setState(() => _playingVerseIndex = index);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to play audio: $e')),
+        SnackBar(
+          content: Text('Failed to play audio: $e', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          backgroundColor: ImanFlowTheme.error,
+        ),
       );
     }
   }

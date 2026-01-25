@@ -3,6 +3,7 @@ import '../../../app/theme.dart';
 import '../../../shared/widgets/glass_widgets.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/services/audio_service.dart';
+import '../../../core/models/dua_audio.dart';
 
 /// Dua Section Widget - Guided Duas for morning, evening, sleep
 class DuaSection extends StatefulWidget {
@@ -41,7 +42,31 @@ class _DuaSectionState extends State<DuaSection> {
           ),
           const SizedBox(height: 12),
           
-          ..._getDuasForCategory().map((dua) => _buildDuaCard(dua)),
+          StreamBuilder<List<DuaAudio>>(
+            stream: _audioService.getAudioStream(_selectedCategory),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: CircularProgressIndicator(color: ImanFlowTheme.gold),
+                ));
+              }
+
+              final duas = snapshot.data ?? [];
+              if (duas.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: Text('No content available for this category yet.', style: TextStyle(color: Colors.white.withOpacity(0.4))),
+                  ),
+                );
+              }
+
+              return Column(
+                children: duas.map((dua) => _buildDuaCard(dua)).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -186,15 +211,6 @@ class _DuaSectionState extends State<DuaSection> {
     }
   }
 
-  List<DuaAudio> _getDuasForCategory() {
-    switch (_selectedCategory) {
-      case 'morning': return DuaAudio.morningDuas;
-      case 'evening': return DuaAudio.eveningDuas;
-      case 'sleep': return DuaAudio.sleepDuas;
-      default: return [...DuaAudio.morningDuas, ...DuaAudio.eveningDuas];
-    }
-  }
-
   Widget _buildDuaCard(DuaAudio dua) {
     final isPlaying = _playingDuaId == dua.id;
     
@@ -242,10 +258,11 @@ class _DuaSectionState extends State<DuaSection> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              dua.nameArabic,
-              style: ArabicTextStyles.quranVerse(fontSize: 14),
-            ),
+            if (dua.nameArabic.isNotEmpty)
+              Text(
+                dua.nameArabic,
+                style: ArabicTextStyles.quranVerse(fontSize: 14),
+              ),
             const SizedBox(height: 4),
             Text(
               _formatDuration(dua.duration),
@@ -262,7 +279,13 @@ class _DuaSectionState extends State<DuaSection> {
               if (dua.isPremium) {
                 _showPremiumDialog();
               } else {
-                await _audioService.playAsset(dua.audioUrl);
+                // If it's a URL, use playUrl. If it's an asset path, use playAsset.
+                // Assuming newly created ones are URLs. 
+                if (dua.audioUrl.startsWith('http')) {
+                  await _audioService.playUrl(dua.audioUrl);
+                } else {
+                  await _audioService.playAsset(dua.audioUrl);
+                }
                 setState(() => _playingDuaId = dua.id);
               }
             }

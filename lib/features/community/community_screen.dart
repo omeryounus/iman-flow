@@ -3,6 +3,9 @@ import '../../app/theme.dart';
 import '../../shared/widgets/glass_widgets.dart';
 import 'widgets/verse_share.dart';
 import 'widgets/quran_puzzle.dart';
+import 'models/challenge.dart';
+import 'services/challenge_service.dart';
+import '../../core/services/service_locator.dart';
 
 /// Community Screen - Social features and fun niches
 class CommunityScreen extends StatefulWidget {
@@ -13,6 +16,7 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
+  final ChallengeService _challengeService = getIt<ChallengeService>();
   int _selectedIndex = 0;
   bool _womenModeEnabled = false;
 
@@ -66,7 +70,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void _toggleWomenMode() {
     setState(() => _womenModeEnabled = !_womenModeEnabled);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_womenModeEnabled ? 'Women-focused content enabled' : 'Women-focused content disabled'), duration: const Duration(seconds: 1), backgroundColor: ImanFlowTheme.bgMid),
+      SnackBar(content: Text(_womenModeEnabled ? 'Women-focused content enabled' : 'Women-focused content disabled'), duration: const Duration(seconds: 1)),
     );
   }
 
@@ -80,57 +84,98 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildChallengesTab() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Active Challenge
-        Glass(
-          radius: 20,
-          padding: const EdgeInsets.all(20),
+    return StreamBuilder<List<Challenge>>(
+      stream: _challengeService.getActiveChallenges(womenOnly: _womenModeEnabled),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: ImanFlowTheme.gold));
+        }
+
+        final challenges = snapshot.data ?? [];
+        if (challenges.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.emoji_events_outlined, size: 64, color: Colors.white24),
+                const SizedBox(height: 16),
+                Text('No active challenges found', style: TextStyle(color: Colors.white.withOpacity(0.5))),
+              ],
+            ),
+          );
+        }
+
+        final activeChallenge = challenges.first; // For simplicity, take the first one as active hero
+        final upcoming = challenges.skip(1).toList();
+
+        return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: ImanFlowTheme.gold.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                    child: const Text('🔥 ACTIVE', style: TextStyle(color: ImanFlowTheme.gold, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ),
-                  const Spacer(),
-                  Text('5 days left', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text('30-Day Quran Challenge', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('Read 1 page of Quran daily for 30 days', style: TextStyle(color: Colors.white.withOpacity(0.7))),
-              const SizedBox(height: 16),
-              
-              const LinearProgressIndicator(value: 0.83, backgroundColor: Colors.white10, color: ImanFlowTheme.gold, minHeight: 6),
-              const SizedBox(height: 8),
-              Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                 children: [
-                    Text('25/30 days completed', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
-                    const Text('1.2k joined', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                 ],
-              ),
+              // Active Challenge Hero
+              _activeChallengeHero(activeChallenge),
+
+              if (upcoming.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Text('Upcoming Challenges', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                const SizedBox(height: 12),
+                ...upcoming.map((c) => _challengeCard(c)),
+              ],
             ],
           ),
-        ),
-
-        const SizedBox(height: 24),
-        const Text('Upcoming Challenges', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-        const SizedBox(height: 12),
-
-        _challengeCard('Ramadan Prep', 'Daily acts of worship', '🌙', 'Starts in 2 weeks', 892),
-        _challengeCard('99 Names', 'Learn Allah\'s names', '📿', 'Starts in 1 week', 543),
-      ],
+        );
+      }
     );
   }
 
-  Widget _challengeCard(String title, String desc, String icon, String status, int count) {
+  Widget _activeChallengeHero(Challenge challenge) {
+    return Glass(
+      radius: 20,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: ImanFlowTheme.gold.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                child: const Text('🔥 ACTIVE', style: TextStyle(color: ImanFlowTheme.gold, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+              const Spacer(),
+              Text('${challenge.daysLeft} days left', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(challenge.title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(challenge.description, style: TextStyle(color: Colors.white.withOpacity(0.7))),
+          const SizedBox(height: 16),
+          
+          const LinearProgressIndicator(value: 0.1, backgroundColor: Colors.white10, color: ImanFlowTheme.gold, minHeight: 6),
+          const SizedBox(height: 8),
+          Row(
+             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+             children: [
+                Text('Started recently', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                Text('${challenge.participantCount} joined', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+             ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _challengeService.joinChallenge(challenge.id),
+              style: ElevatedButton.styleFrom(backgroundColor: ImanFlowTheme.gold, foregroundColor: Colors.black),
+              child: const Text('Join Challenge'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _challengeCard(Challenge challenge) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Glass(
@@ -141,17 +186,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Container(
               width: 48, height: 48,
               decoration: BoxDecoration(color: ImanFlowTheme.emeraldGlow.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-              child: Center(child: Text(icon, style: const TextStyle(fontSize: 24))),
+              child: Center(child: Text(challenge.icon, style: const TextStyle(fontSize: 24))),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)),
-                  Text(desc, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                  Text(challenge.title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)),
+                  Text(challenge.description, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text('$count joined • $status', style: const TextStyle(color: ImanFlowTheme.gold, fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text('${challenge.participantCount} joined • Starts ${challenge.startDate.month}/${challenge.startDate.day}', 
+                    style: const TextStyle(color: ImanFlowTheme.gold, fontSize: 11, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),

@@ -93,8 +93,6 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$prayerName prayer marked as complete!'),
-          backgroundColor: ImanFlowTheme.gold,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }

@@ -9,6 +9,7 @@ import '../features/community/community_screen.dart';
 import '../features/premium/paywall_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/admin/admin_dashboard.dart';
 import '../shared/widgets/main_shell.dart';
 
 /// App Router using go_router
@@ -18,7 +19,6 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
     routes: [
       // Main shell with bottom navigation
       ShellRoute(
@@ -26,7 +26,7 @@ class AppRouter {
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(
-            path: '/home',
+            path: '/',
             name: 'home',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: HomeScreen(),
@@ -82,6 +82,11 @@ class AppRouter {
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        name: 'admin',
+        builder: (context, state) => const AdminDashboard(),
       ),
     ],
   );
