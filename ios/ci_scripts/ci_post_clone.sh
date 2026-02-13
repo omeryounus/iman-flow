@@ -1,19 +1,24 @@
 #!/bin/sh
 
-# Fail on error
+# Set error exit
 set -e
 
-# The CI_WORKSPACE is the root of your git repo
-cd $CI_WORKSPACE
+# Use the specific primary repository path provided by Xcode Cloud
+cd "$CI_PRIMARY_REPOSITORY_PATH"
 
-# 1. Install Flutter
-git clone https://github.com -b stable $HOME/flutter
+# Clone Flutter into a hidden directory in the user home
+# We use a single line to avoid any potential break issues
+git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
+
+# Add to PATH
 export PATH="$PATH:$HOME/flutter/bin"
 
-# 2. Precache artifacts and get packages
+# Prepare Flutter
 flutter precache --ios
 flutter pub get
 
-# 3. Install CocoaPods dependencies
+# Setup Pods
 cd ios
 pod install
+
+exit 0
